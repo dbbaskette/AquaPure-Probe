@@ -42,8 +42,9 @@ or complete response bodies.
 (JSON is also valid YAML in Home Assistant's raw dashboard editor). Adjust the
 entity IDs for your installation before importing it.
 
-Water readings from all integrations appear together first: salt, free chlorine,
-pH, and water temperature, followed by alkalinity, stabilizer, hardness, and flow.
+Water readings from all integrations appear together first in eight gauges:
+salt, free chlorine, pH, water temperature, alkalinity, stabilizer, calcium
+hardness, and flow.
 Controls, heating settings, and equipment maintenance appear below. The sample
 age remains visible because chemistry readings are not necessarily live.
 
@@ -51,9 +52,13 @@ The salt gauge highlights the **3,000–3,500 ppm** range recommended in the
 [Jandy AquaPure/PureLink manual, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf).
 The dashboard suggests **about 3,200 ppm** as a practical aim within that range;
 this is not a separate manufacturer-specified exact setpoint. The pH gauge's
-green band reflects the manual's 7.4–7.6 recommendation. The free-chlorine gauge
-uses a neutral color because interpretation also depends on stabilizer and the
-latest water assessment.
+green band reflects the manual's 7.4–7.6 recommendation. Chemistry green bands
+also follow section 4.5: free chlorine 1–3 ppm, alkalinity 80–120 ppm,
+stabilizer 50–75 ppm, and calcium hardness 175–400 ppm. Yellow and red mark
+progressively larger departures for dashboard attention; their transitions are
+display choices, not manufacturer dosing or swimming-safety limits. Chlorine
+must be interpreted alongside stabilizer and sample age. Temperature and flow
+remain neutral blue because their targets depend on comfort and equipment.
 
 ### Optional dashboard artwork
 
