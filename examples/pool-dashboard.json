@@ -499,33 +499,6 @@
         },
         {
           "type": "grid",
-          "cards": [
-            {
-              "type": "heading",
-              "heading": "Temperature settings",
-              "icon": "mdi:thermometer",
-              "heading_style": "title"
-            },
-            {
-              "type": "thermostat",
-              "entity": "climate.pool",
-              "name": "Pool heat"
-            },
-            {
-              "type": "thermostat",
-              "entity": "climate.spa",
-              "name": "Spa heat"
-            },
-            {
-              "type": "tile",
-              "entity": "sensor.air_temp",
-              "name": "Air temperature",
-              "icon": "mdi:weather-sunny"
-            }
-          ]
-        },
-        {
-          "type": "grid",
           "column_span": 2,
           "cards": [
             {
@@ -533,6 +506,16 @@
               "heading": "Equipment & maintenance",
               "icon": "mdi:wrench-outline",
               "heading_style": "title"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.air_temp",
+              "name": "Air temperature",
+              "icon": "mdi:weather-sunny",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
             },
             {
               "type": "tile",
