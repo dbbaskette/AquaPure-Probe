@@ -38,35 +38,35 @@
               "heading_style": "subtitle"
             },
             {
-              "type": "tile",
-              "entity": "switch.pool_pump",
-              "name": "Pool pump",
-              "icon": "mdi:pump",
+              "type": "entities",
+              "show_header_toggle": false,
+              "state_color": true,
+              "entities": [
+                {
+                  "entity": "switch.pool_pump",
+                  "name": "Pool",
+                  "icon": "mdi:pump"
+                }
+              ],
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "tap_action": {
-                "action": "toggle"
-              },
-              "icon_tap_action": {
-                "action": "toggle"
+                "rows": "auto"
               }
             },
             {
-              "type": "tile",
-              "entity": "switch.spa_pump",
-              "name": "Spa pump",
-              "icon": "mdi:hot-tub",
+              "type": "entities",
+              "show_header_toggle": false,
+              "state_color": true,
+              "entities": [
+                {
+                  "entity": "switch.spa_pump",
+                  "name": "Spa",
+                  "icon": "mdi:hot-tub"
+                }
+              ],
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "tap_action": {
-                "action": "toggle"
-              },
-              "icon_tap_action": {
-                "action": "toggle"
+                "rows": "auto"
               }
             },
             {
@@ -486,9 +486,9 @@
             },
             {
               "type": "tile",
-              "entity": "switch.solar_heater",
-              "name": "Solar heat",
-              "icon": "mdi:white-balance-sunny",
+              "entity": "switch.low_speed",
+              "name": "Low speed",
+              "icon": "mdi:speedometer-slow",
               "features": [
                 {
                   "type": "toggle"
