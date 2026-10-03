@@ -76,7 +76,7 @@
               "entities": [
                 {
                   "entity": "light.pool_light",
-                "name": "Pool",
+                  "name": "Pool",
                   "icon": "mdi:lightbulb"
                 }
               ],
@@ -92,7 +92,7 @@
               "entities": [
                 {
                   "entity": "switch.spa_light",
-                "name": "Spa",
+                  "name": "Spa",
                   "icon": "mdi:lightbulb"
                 }
               ],
@@ -102,25 +102,55 @@
               }
             },
             {
-              "type": "tile",
-              "entity": "switch.pool_heater",
-              "name": "Pool heater",
-              "icon": "mdi:fire",
+              "type": "entities",
+              "show_header_toggle": false,
+              "state_color": true,
+              "entities": [
+                {
+                  "entity": "switch.pool_heater",
+                  "name": "Pool",
+                  "icon": "mdi:fire"
+                }
+              ],
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "tap_action": {
-                "action": "toggle"
-              },
-              "icon_tap_action": {
-                "action": "toggle"
+                "rows": "auto"
+              }
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "state_color": true,
+              "entities": [
+                {
+                  "entity": "switch.spa_heater",
+                  "name": "Spa",
+                  "icon": "mdi:fire"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": "auto"
               }
             },
             {
               "type": "tile",
               "entity": "climate.pool",
               "name": "Pool heat target",
+              "features": [
+                {
+                  "type": "target-temperature"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 2
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "climate.spa",
+              "name": "Spa heat target",
               "features": [
                 {
                   "type": "target-temperature"
@@ -448,17 +478,6 @@
               "entity": "switch.air_blower",
               "name": "Air blower",
               "icon": "mdi:weather-windy",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ]
-            },
-            {
-              "type": "tile",
-              "entity": "switch.spa_heater",
-              "name": "Spa heater",
-              "icon": "mdi:fire",
               "features": [
                 {
                   "type": "toggle"
