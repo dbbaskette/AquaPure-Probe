@@ -25,15 +25,54 @@ class ProbeSensorDescription(SensorEntityDescription):
 
 
 DESCRIPTIONS: tuple[ProbeSensorDescription, ...] = (
-    ProbeSensorDescription(key="pool_output", name="Pool chlorine output", native_unit_of_measurement=PERCENTAGE, data_key="pool_output"),
-    ProbeSensorDescription(key="spa_output", name="Spa chlorine output", native_unit_of_measurement=PERCENTAGE, data_key="spa_output"),
-    ProbeSensorDescription(key="salt_ppm", name="Salt level", native_unit_of_measurement="ppm", data_key="salt_ppm"),
-    ProbeSensorDescription(key="swc_status", name="Chlorinator status", data_key="swc_status"),
-    ProbeSensorDescription(key="boost_status", name="Boost status", data_key="boost_status"),
-    ProbeSensorDescription(key="boost_hours_remaining", name="Boost hours remaining", native_unit_of_measurement="h", data_key="boost_hours_remaining"),
-    ProbeSensorDescription(key="low_salt", name="Low salt flag", entity_category=EntityCategory.DIAGNOSTIC, data_key="low_salt"),
-    ProbeSensorDescription(key="probe_response", name="Probe response", entity_category=EntityCategory.DIAGNOSTIC, data_key="probe_response"),
-    ProbeSensorDescription(key="webtouch_status", name="WebTouch probe", entity_category=EntityCategory.DIAGNOSTIC, data_key="webtouch_status"),
+    ProbeSensorDescription(
+        key="pool_output",
+        name="Pool chlorine output",
+        native_unit_of_measurement=PERCENTAGE,
+        data_key="pool_output",
+    ),
+    ProbeSensorDescription(
+        key="spa_output",
+        name="Spa chlorine output",
+        native_unit_of_measurement=PERCENTAGE,
+        data_key="spa_output",
+    ),
+    ProbeSensorDescription(
+        key="salt_ppm",
+        name="Salt level",
+        native_unit_of_measurement="ppm",
+        data_key="salt_ppm",
+    ),
+    ProbeSensorDescription(
+        key="swc_status", name="Chlorinator status", data_key="swc_status"
+    ),
+    ProbeSensorDescription(
+        key="boost_status", name="Boost status", data_key="boost_status"
+    ),
+    ProbeSensorDescription(
+        key="boost_hours_remaining",
+        name="Boost hours remaining",
+        native_unit_of_measurement="h",
+        data_key="boost_hours_remaining",
+    ),
+    ProbeSensorDescription(
+        key="low_salt",
+        name="Low salt flag",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        data_key="low_salt",
+    ),
+    ProbeSensorDescription(
+        key="probe_response",
+        name="Probe response",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        data_key="probe_response",
+    ),
+    ProbeSensorDescription(
+        key="webtouch_status",
+        name="WebTouch probe",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        data_key="webtouch_status",
+    ),
 )
 
 
@@ -42,12 +81,11 @@ async def async_setup_entry(
     entry: ConfigEntry[AquaPureProbeCoordinator],
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up only the values actually returned by the controller."""
+    """Set up all probe values so temporarily missing data can recover later."""
     coordinator = entry.runtime_data
     async_add_entities(
         AquaPureProbeSensor(coordinator, description)
         for description in DESCRIPTIONS
-        if coordinator.data.get(description.data_key) not in (None, "")
     )
 
 
@@ -57,7 +95,11 @@ class AquaPureProbeSensor(CoordinatorEntity[AquaPureProbeCoordinator], SensorEnt
     entity_description: ProbeSensorDescription
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: AquaPureProbeCoordinator, description: ProbeSensorDescription) -> None:
+    def __init__(
+        self,
+        coordinator: AquaPureProbeCoordinator,
+        description: ProbeSensorDescription,
+    ) -> None:
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.data['serial']}_{description.key}"
