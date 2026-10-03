@@ -42,15 +42,33 @@ or complete response bodies.
 (JSON is also valid YAML in Home Assistant's raw dashboard editor). Adjust the
 entity IDs for your installation before importing it.
 
-Water readings from all integrations appear together first in eight gauges:
-salt, free chlorine, pH, water temperature, alkalinity, stabilizer, calcium
-hardness, and flow.
-Controls, heating settings, and equipment maintenance appear below. The sample
-age remains visible because chemistry readings are not necessarily live.
+Water readings appear together in one compact grid with no per-pair headings.
+Each reading combines a value, colored range bar, and 24-hour recorded trend in
+one card. The grid uses four columns on larger screens and two on phones. The
+Backyard Ring camera and quick controls come first, side by side on larger screens
+and stacked on phones. The short 21:9 camera preview opens camera details when
+tapped. Readings follow immediately; sample age, retained-salt warnings and water
+status stay with the readings. Additional controls and maintenance remain below.
 
-Every gauge is shown only for a numeric sensor state. An identically sized
-"Reading unavailable" card replaces it for missing, `unknown`, `unavailable`,
-or nonnumeric readings, then disappears automatically when data returns.
+Copy `www/pool-readings-card.js` to Home Assistant's `/config/www/` and register
+`/local/pool-readings-card.js?v=1` as a **JavaScript module** dashboard resource
+before importing the example. This dependency-free local card makes read-only,
+authenticated history requests for all eight sensors together every five minutes.
+It never calls equipment services. Tapping a reading opens Home Assistant's
+normal entity details; equipment controls use native Home Assistant cards.
+
+History begins with data Home Assistant has recorded; this does not backfill
+WaterGuru. Step plots preserve unavailable gaps and do not invent prehistory.
+Horizontal tails show the last recorded state, not continuous sampling. Retained
+salt is dashed and labeled, with its confirmation time below the readings.
+No extra database or external frontend packages are required.
+
+Ring streaming depends on the configured integration and cloud connection.
+The camera card does not resolve Ring playback/authentication errors. The existing
+Ring setup reported "Unable to play media" during deployment verification.
+
+Missing, `unknown`, `unavailable`, or nonnumeric readings show a dash and
+"Reading unavailable" in place, recovering automatically when data returns.
 Missing readings are never converted to zero. Salt is deliberately different:
 the integration retains its last valid observation, persists it across restarts,
 and exposes `stale`, `last_successful_reading`, and `update_status` attributes.
@@ -66,7 +84,8 @@ omission or change any equipment settings. Existing installations can seed the
 new cache from a verified recorder observation (including its actual timestamp);
 never seed it from the dashboard target or a guessed value.
 
-Run regression checks with `python3 -m unittest discover -s tests -v`.
+Run regression checks with `python3 -m unittest discover -s tests -v` and
+`node --test tests/test_pool_readings.mjs`.
 
 The salt gauge highlights the **3,000–3,500 ppm** range recommended in the
 [Jandy AquaPure/PureLink manual, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf).

@@ -9,507 +9,372 @@
       "sections": [
         {
           "type": "grid",
-          "column_span": 2,
+          "cards": [
+            {
+              "type": "picture-entity",
+              "entity": "camera.backyard_live_view",
+              "name": "Backyard · pool",
+              "camera_view": "live",
+              "aspect_ratio": "21:9",
+              "show_name": true,
+              "show_state": false,
+              "tap_action": {
+                "action": "more-info"
+              },
+              "grid_options": {
+                "columns": 12,
+                "rows": "auto"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
           "cards": [
             {
               "type": "heading",
-              "heading": "Water at a glance",
-              "icon": "mdi:water-check",
-              "heading_style": "title"
+              "heading": "Quick controls",
+              "icon": "mdi:tune-variant",
+              "heading_style": "subtitle"
             },
             {
-              "type": "gauge",
-              "entity": "sensor.aquapure_probe_talokan_salt_level",
-              "name": "Salt · last reported",
-              "min": 1500,
-              "max": 4500,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 1500,
-                  "color": "#dc5b5b"
-                },
-                {
-                  "from": 2000,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 3000,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 3501,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 4001,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
+              "type": "tile",
+              "entity": "switch.pool_pump",
+              "name": "Pool pump",
+              "icon": "mdi:pump",
               "grid_options": {
                 "columns": 6,
-                "rows": 3
+                "rows": 1
               },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
-                  "entity": "sensor.aquapure_probe_talokan_salt_level",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Salt\n\n**Reading unavailable**\n\nWaiting for controller data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
-                    {
-                      "condition": "numeric_state",
-                      "entity": "sensor.aquapure_probe_talokan_salt_level",
-                      "above": -1e+100,
-                      "below": 1e+100
-                    }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
               }
             },
             {
-              "type": "gauge",
-              "entity": "sensor.atlantis_free_chlorine",
-              "name": "Free chlorine · target 3",
-              "min": 0,
-              "max": 10,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 0,
-                  "color": "#dc5b5b"
-                },
-                {
-                  "from": 0.6,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 1.6,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 5.41,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 8.41,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
+              "type": "tile",
+              "entity": "switch.spa_pump",
+              "name": "Spa pump",
+              "icon": "mdi:hot-tub",
               "grid_options": {
                 "columns": 6,
-                "rows": 3
+                "rows": 1
               },
-              "visibility": [
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "light.pool_light",
+              "name": "Pool lights",
+              "icon": "mdi:lightbulb",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "switch.pool_heater",
+              "name": "Pool heater",
+              "icon": "mdi:fire",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "climate.pool",
+              "name": "Pool heat target",
+              "features": [
                 {
-                  "condition": "numeric_state",
+                  "type": "target-temperature"
+                }
+              ],
+              "grid_options": {
+                "columns": 12,
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "column_span": 2,
+          "cards": [
+            {
+              "type": "custom:pool-readings-card",
+              "readings": [
+                {
                   "entity": "sensor.atlantis_free_chlorine",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Free chlorine\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Free chlorine",
+                  "min": 0,
+                  "max": 10,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_free_chlorine",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 0,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 0.6,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 1.6,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 5.41,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 8.41,
+                      "color": "#dc5b5b"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.atlantis_ph",
-              "name": "pH · target 7.6",
-              "min": 6.5,
-              "max": 8.5,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 6.5,
-                  "color": "#dc5b5b"
+                  ],
+                  "unit": "ppm",
+                  "precision": 1,
+                  "target": "Target 3 ppm",
+                  "good_min": 1.6,
+                  "good_max": 5.4
                 },
                 {
-                  "from": 7.3,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 7.5,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 7.71,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 7.91,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
                   "entity": "sensor.atlantis_ph",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### pH\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "pH",
+                  "min": 6.5,
+                  "max": 8.5,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_ph",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 6.5,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 7.3,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 7.5,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 7.71,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 7.91,
+                      "color": "#dc5b5b"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.pool_temp",
-              "name": "Water temperature",
-              "min": 50,
-              "max": 100,
-              "needle": true,
-              "segments": [
+                  ],
+                  "unit": "",
+                  "precision": 1,
+                  "target": "Target 7.6",
+                  "good_min": 7.5,
+                  "good_max": 7.7
+                },
                 {
-                  "from": 50,
-                  "color": "#2596be"
-                }
-              ],
-              "unit": "°F",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
+                  "entity": "sensor.aquapure_probe_talokan_salt_level",
+                  "name": "Salt",
+                  "min": 1500,
+                  "max": 4500,
+                  "segments": [
+                    {
+                      "from": 1500,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 2000,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 3000,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 3501,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 4001,
+                      "color": "#dc5b5b"
+                    }
+                  ],
+                  "unit": "ppm",
+                  "precision": 0,
+                  "target": "Aim ≈3,200 ppm",
+                  "good_min": 3000,
+                  "good_max": 3500
+                },
                 {
-                  "condition": "numeric_state",
                   "entity": "sensor.pool_temp",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Water temperature\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Water temperature",
+                  "min": 50,
+                  "max": 100,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.pool_temp",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 50,
+                      "color": "#2596be"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.atlantis_total_alkalinity",
-              "name": "Alkalinity · target 80",
-              "min": 0,
-              "max": 240,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 0,
-                  "color": "#dc5b5b"
+                  ],
+                  "unit": "°F",
+                  "precision": 0,
+                  "target": "Pool heat set separately",
+                  "neutral": true
                 },
                 {
-                  "from": 40,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 50,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 130.01,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 160.01,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
                   "entity": "sensor.atlantis_total_alkalinity",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Alkalinity\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Alkalinity",
+                  "min": 0,
+                  "max": 240,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_total_alkalinity",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 0,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 40,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 50,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 130.01,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 160.01,
+                      "color": "#dc5b5b"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
-              "name": "Stabilizer · target 65",
-              "min": 0,
-              "max": 300,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 0,
-                  "color": "#dc5b5b"
+                  ],
+                  "unit": "ppm",
+                  "precision": 0,
+                  "target": "Target 80 ppm",
+                  "good_min": 50,
+                  "good_max": 130
                 },
                 {
-                  "from": 20,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 30,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 100.01,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 200.01,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
                   "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Stabilizer\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Stabilizer · CYA",
+                  "min": 0,
+                  "max": 300,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 0,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 20,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 30,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 100.01,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 200.01,
+                      "color": "#dc5b5b"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.atlantis_calcium_hardness",
-              "name": "Calcium · target 400",
-              "min": 0,
-              "max": 1600,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 0,
-                  "color": "#dc5b5b"
+                  ],
+                  "unit": "ppm",
+                  "precision": 0,
+                  "target": "Target 65 ppm",
+                  "good_min": 30,
+                  "good_max": 100
                 },
                 {
-                  "from": 200,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 300,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 500.01,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 800.01,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
                   "entity": "sensor.atlantis_calcium_hardness",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Calcium\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Calcium hardness",
+                  "min": 0,
+                  "max": 1600,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_calcium_hardness",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 0,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 200,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 300,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 500.01,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 800.01,
+                      "color": "#dc5b5b"
                     }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.atlantis_skimmer_flow",
-              "name": "Skimmer flow · target 15",
-              "min": 0,
-              "max": 90,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 0,
-                  "color": "#dc5b5b"
+                  ],
+                  "unit": "ppm",
+                  "precision": 0,
+                  "target": "Target 400 ppm",
+                  "good_min": 300,
+                  "good_max": 500
                 },
                 {
-                  "from": 2,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 5,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 79.01,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 89.01,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "gal/min",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
                   "entity": "sensor.atlantis_skimmer_flow",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Skimmer flow\n\n**Reading unavailable**\n\nWaiting for sensor data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
+                  "name": "Skimmer flow",
+                  "min": 0,
+                  "max": 90,
+                  "segments": [
                     {
-                      "condition": "numeric_state",
-                      "entity": "sensor.atlantis_skimmer_flow",
-                      "above": -1e+100,
-                      "below": 1e+100
+                      "from": 0,
+                      "color": "#dc5b5b"
+                    },
+                    {
+                      "from": 2,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 5,
+                      "color": "#2da995"
+                    },
+                    {
+                      "from": 79.01,
+                      "color": "#e6ac38"
+                    },
+                    {
+                      "from": 89.01,
+                      "color": "#dc5b5b"
                     }
-                  ]
+                  ],
+                  "unit": "gal/min",
+                  "precision": 0,
+                  "target": "Target 15 gal/min",
+                  "good_min": 5,
+                  "good_max": 79
                 }
               ],
               "grid_options": {
-                "columns": 6,
-                "rows": 3
+                "columns": "full",
+                "rows": "auto"
               }
             },
             {
@@ -547,31 +412,9 @@
           "cards": [
             {
               "type": "heading",
-              "heading": "Pool & spa controls",
+              "heading": "More controls",
               "icon": "mdi:pool",
-              "heading_style": "title"
-            },
-            {
-              "type": "tile",
-              "entity": "switch.pool_pump",
-              "name": "Pool pump",
-              "icon": "mdi:pump",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ]
-            },
-            {
-              "type": "tile",
-              "entity": "switch.spa_pump",
-              "name": "Spa pump",
-              "icon": "mdi:hot-tub",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ]
+              "heading_style": "subtitle"
             },
             {
               "type": "tile",
@@ -589,17 +432,6 @@
               "entity": "switch.air_blower",
               "name": "Air blower",
               "icon": "mdi:weather-windy",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ]
-            },
-            {
-              "type": "tile",
-              "entity": "switch.pool_heater",
-              "name": "Pool heater",
-              "icon": "mdi:fire",
               "features": [
                 {
                   "type": "toggle"
@@ -638,12 +470,6 @@
                   "type": "toggle"
                 }
               ]
-            },
-            {
-              "type": "tile",
-              "entity": "light.pool_light",
-              "name": "Pool lights",
-              "icon": "mdi:lightbulb"
             }
           ]
         },
