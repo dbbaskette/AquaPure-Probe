@@ -55,7 +55,13 @@ async def _read_webtouch_salt(
 
     # The app's Web launch uses a controller identifier.  Current and older
     # API responses have used either the numeric record id or serial number.
-    action_ids = [str(value) for value in (data.get("id"), serial) if value]
+    # The official Owner's Portal launches WebTouch with ``device.touchLink``.
+    # Keep the older ID/serial candidates only as compatibility fallbacks.
+    action_ids = [
+        str(value)
+        for value in (data.get("touchLink"), data.get("id"), serial)
+        if value
+    ]
     session = async_get_clientsession(hass)
     headers = {"Authorization": str(token)}
 
