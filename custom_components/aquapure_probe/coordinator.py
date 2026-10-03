@@ -21,6 +21,8 @@ _LOGGER = logging.getLogger(__name__)
 
 _WEBTOUCH_INIT_URL = "https://prm.iaqualink.net/v2/webtouch/init"
 _WEBTOUCH_COMMAND_URL = "https://prm.iaqualink.net/v2/webtouch/command"
+_WEBTOUCH_V1_INIT_URL = "https://prm.iaqualink.net/webtouch/init"
+_WEBTOUCH_V1_COMMAND_URL = "https://prm.iaqualink.net/webtouch/command"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
 _ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
 
@@ -57,7 +59,10 @@ async def _read_webtouch_salt(
     session = async_get_clientsession(hass)
     headers = {"Authorization": str(token)}
 
-    async def start_data(action_id: str) -> Mapping[str, Any] | None:
+    async def start_data(
+        action_id: str,
+    ) -> tuple[Mapping[str, Any], str] | None:
+        """Try both publicly shipped WebTouch authentication branches."""
         try:
             async with session.get(
                 _WEBTOUCH_INIT_URL,
@@ -66,13 +71,41 @@ async def _read_webtouch_salt(
                 timeout=10,
             ) as response:
                 if response.status != 200:
+                    payload = None
+                else:
+                    payload = await response.json(content_type=None)
+                if isinstance(payload, Mapping) and (
+                    payload.get("serverConnection") or payload.get("mobileTouchUrl")
+                ):
+                    return payload, "v2"
+        except (asyncio.TimeoutError, ValueError):
+            pass
+        except Exception:  # A display probe must never break normal SWC data.
+            pass
+
+        # The public WebTouch page itself supports this older sessionID route.
+        # RS systems commonly use it, whereas newer systems use the OAuth path.
+        session_id = getattr(client, "client_id", None)
+        if not session_id:
+            return None
+        try:
+            async with session.get(
+                _WEBTOUCH_V1_INIT_URL,
+                params={"actionID": action_id, "sessionID": str(session_id)},
+                timeout=10,
+            ) as response:
+                if response.status != 200:
                     return None
                 payload = await response.json(content_type=None)
-                return payload if isinstance(payload, Mapping) else None
+                if isinstance(payload, Mapping) and (
+                    payload.get("serverConnection") or payload.get("mobileTouchUrl")
+                ):
+                    return payload, "v1"
         except (asyncio.TimeoutError, ValueError):
             return None
-        except Exception:  # A display probe must never break normal SWC data.
+        except Exception:
             return None
+        return None
 
     async def follow_mobile_link(url: str) -> str | None:
         """Follow the app's Web handoff without retaining its signed URL."""
@@ -95,9 +128,10 @@ async def _read_webtouch_salt(
             return None
 
     for action_id in dict.fromkeys(action_ids):
-        init_data = await start_data(action_id)
-        if init_data is None:
+        result = await start_data(action_id)
+        if result is None:
             continue
+        init_data, protocol = result
 
         # The mobile app may turn the controller identifier into a short-lived
         # display action ID before the actual WebTouch session is initialized.
@@ -107,9 +141,10 @@ async def _read_webtouch_salt(
             redirected_action = await follow_mobile_link(mobile_link)
             if not redirected_action:
                 continue
-            init_data = await start_data(redirected_action)
-            if init_data is None:
+            result = await start_data(redirected_action)
+            if result is None:
                 continue
+            init_data, protocol = result
 
         stream_url = init_data.get("serverConnection")
         start_action = init_data.get("actionIdMasterStart")
@@ -137,16 +172,29 @@ async def _read_webtouch_salt(
         try:
             # This mirrors the WebTouch browser's initial display handshake.
             # It starts no pool equipment and carries no equipment identifier.
-            async with session.post(
-                _WEBTOUCH_COMMAND_URL,
-                json={
-                    "actionID": start_action,
-                    "command": "1",
-                    "dt": str(round(time.time() * 1000)),
-                },
-                headers=headers,
-                timeout=10,
-            ) as response:
+            if protocol == "v1":
+                command = session.get(
+                    _WEBTOUCH_V1_COMMAND_URL,
+                    params={
+                        "actionID": start_action,
+                        "command": "1",
+                        "dt": str(round(time.time() * 1000)),
+                        "sessionID": str(getattr(client, "client_id", "")),
+                    },
+                    timeout=10,
+                )
+            else:
+                command = session.post(
+                    _WEBTOUCH_COMMAND_URL,
+                    json={
+                        "actionID": start_action,
+                        "command": "1",
+                        "dt": str(round(time.time() * 1000)),
+                    },
+                    headers=headers,
+                    timeout=10,
+                )
+            async with command as response:
                 if response.status != 200:
                     stream_task.cancel()
                     await asyncio.gather(stream_task, return_exceptions=True)
