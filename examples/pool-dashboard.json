@@ -9,77 +9,12 @@
       "sections": [
         {
           "type": "grid",
-          "column_span": 2,
           "cards": [
             {
               "type": "heading",
-              "heading": "Water at a glance",
+              "heading": "Chlorine & pH",
               "icon": "mdi:water-check",
               "heading_style": "title"
-            },
-            {
-              "type": "gauge",
-              "entity": "sensor.aquapure_probe_talokan_salt_level",
-              "name": "Salt · last reported",
-              "min": 1500,
-              "max": 4500,
-              "needle": true,
-              "segments": [
-                {
-                  "from": 1500,
-                  "color": "#dc5b5b"
-                },
-                {
-                  "from": 2000,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 3000,
-                  "color": "#2da995"
-                },
-                {
-                  "from": 3501,
-                  "color": "#e6ac38"
-                },
-                {
-                  "from": 4001,
-                  "color": "#dc5b5b"
-                }
-              ],
-              "unit": "ppm",
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              },
-              "visibility": [
-                {
-                  "condition": "numeric_state",
-                  "entity": "sensor.aquapure_probe_talokan_salt_level",
-                  "above": -1e+100,
-                  "below": 1e+100
-                }
-              ]
-            },
-            {
-              "type": "markdown",
-              "content": "### Salt\n\n**Reading unavailable**\n\nWaiting for controller data.",
-              "visibility": [
-                {
-                  "condition": "not",
-                  "conditions": [
-                    {
-                      "condition": "numeric_state",
-                      "entity": "sensor.aquapure_probe_talokan_salt_level",
-                      "above": -1e+100,
-                      "below": 1e+100
-                    }
-                  ]
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 3
-              }
             },
             {
               "type": "gauge",
@@ -209,6 +144,113 @@
               }
             },
             {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_free_chlorine",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_ph",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Salt & temperature",
+              "icon": "mdi:pool-thermometer",
+              "heading_style": "title"
+            },
+            {
+              "type": "gauge",
+              "entity": "sensor.aquapure_probe_talokan_salt_level",
+              "name": "Salt · last reported",
+              "min": 1500,
+              "max": 4500,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 1500,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 2000,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 3000,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 3501,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 4001,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "unit": "ppm",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.aquapure_probe_talokan_salt_level",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Salt\n\n**Reading unavailable**\n\nWaiting for controller data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.aquapure_probe_talokan_salt_level",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
               "type": "gauge",
               "entity": "sensor.pool_temp",
               "name": "Water temperature",
@@ -255,6 +297,49 @@
                 "columns": 6,
                 "rows": 3
               }
+            },
+            {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.aquapure_probe_talokan_salt_level",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.pool_temp",
+                  "color": "#2596be"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Water balance",
+              "icon": "mdi:beaker-check-outline",
+              "heading_style": "title"
             },
             {
               "type": "gauge",
@@ -385,6 +470,49 @@
               }
             },
             {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_total_alkalinity",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Hardness & circulation",
+              "icon": "mdi:waves",
+              "heading_style": "title"
+            },
+            {
               "type": "gauge",
               "entity": "sensor.atlantis_calcium_hardness",
               "name": "Calcium · target 400",
@@ -513,10 +641,70 @@
               }
             },
             {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_calcium_hardness",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "history-graph",
+              "title": "24 hours",
+              "hours_to_show": 24,
+              "show_names": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_skimmer_flow",
+                  "color": "#2da995"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "column_span": 2,
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Pool view & reading status",
+              "icon": "mdi:cctv",
+              "heading_style": "title"
+            },
+            {
+              "type": "picture-entity",
+              "entity": "camera.backyard_live_view",
+              "name": "Backyard · pool live view",
+              "camera_view": "live",
+              "aspect_ratio": "16:9",
+              "show_name": true,
+              "show_state": false,
+              "tap_action": {
+                "action": "more-info"
+              },
+              "grid_options": {
+                "columns": 12,
+                "rows": "auto"
+              }
+            },
+            {
               "type": "markdown",
               "content": "{% set salt_entity = 'sensor.aquapure_probe_talokan_salt_level' %}\n{% set confirmed = as_datetime(state_attr(salt_entity, 'last_successful_reading'), none) %}\n{% if state_attr(salt_entity, 'stale') or states(salt_entity) in ['unknown', 'unavailable'] %}\n**⚠ Salt: last known reading — update unavailable.**\n{% else %}\n**Salt reading confirmed.**\n{% endif %}\n{% if confirmed %}Last confirmed **{{ relative_time(confirmed) }} ago** · {{ as_local(confirmed).strftime('%b %-d, %-I:%M %p') }}.{% endif %}\n\nSalt goal: **about 3,200 ppm** · Range **3,000–3,500 ppm**.\n\n{% set sample = as_datetime(states('sensor.atlantis_last_measurement'), none) %}Chemistry sample: **{{ relative_time(sample) ~ ' ago' if sample else 'time unavailable' }}**. Salt and water temperature refresh separately.",
               "grid_options": {
-                "columns": "full",
+                "columns": 12,
                 "rows": "auto"
               }
             },
@@ -538,6 +726,14 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 1
+              }
+            },
+            {
+              "type": "markdown",
+              "content": "Daily graphs show the **last 24 hours** recorded by Home Assistant. Flat chemistry lines can mean the last test is still the latest result—not continuous testing. Salt history includes retained readings; check its last-confirmed time above.",
+              "grid_options": {
+                "columns": 12,
+                "rows": "auto"
               }
             }
           ]

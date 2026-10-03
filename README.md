@@ -42,11 +42,18 @@ or complete response bodies.
 (JSON is also valid YAML in Home Assistant's raw dashboard editor). Adjust the
 entity IDs for your installation before importing it.
 
-Water readings from all integrations appear together first in eight gauges:
-salt, free chlorine, pH, water temperature, alkalinity, stabilizer, calcium
-hardness, and flow.
-Controls, heating settings, and equipment maintenance appear below. The sample
-age remains visible because chemistry readings are not necessarily live.
+Water readings from all integrations appear together first in paired gauges:
+chlorine/pH, salt/temperature, alkalinity/stabilizer, and hardness/flow. Each
+gauge has a compact native history graph directly beneath it showing the rolling
+last 24 hours from Home Assistant Recorder. No extra database or custom card is
+required. History begins with the data Home Assistant has recorded; this does
+not backfill measurements from WaterGuru. Flat lines can represent an unchanged
+last test rather than continuous sampling, especially for retained salt values.
+
+The Backyard Ring live-view card (`camera.backyard_live_view`) follows the
+readings, alongside sample age and reading status. Controls, heating settings,
+and equipment maintenance appear below. Ring streaming depends on the configured
+integration and cloud connection; tapping the card opens its camera details.
 
 Every gauge is shown only for a numeric sensor state. An identically sized
 "Reading unavailable" card replaces it for missing, `unknown`, `unavailable`,

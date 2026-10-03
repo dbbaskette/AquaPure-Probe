@@ -10,7 +10,8 @@ class DashboardTests(unittest.TestCase):
         config = json.loads(
             (Path(__file__).parents[1] / "examples/pool-dashboard.json").read_text()
         )
-        cards = config["views"][0]["sections"][0]["cards"]
+        sections = config["views"][0]["sections"]
+        cards = [card for section in sections for card in section["cards"]]
         gauges = [(i, c) for i, c in enumerate(cards) if c["type"] == "gauge"]
         self.assertEqual(len(gauges), 8)
         for i, gauge in gauges:
@@ -26,11 +27,31 @@ class DashboardTests(unittest.TestCase):
                 self.assertEqual(fallback["visibility"], [
                     {"condition": "not", "conditions": [condition]}
                 ])
-        self.assertEqual(gauges[0][1]["name"], "Salt · last reported")
-        note = next(c["content"] for c in cards if c["type"] == "markdown" and "visibility" not in c)
+        salt = next(g for _, g in gauges if "salt_level" in g["entity"])
+        self.assertEqual(salt["name"], "Salt · last reported")
+        note = next(c["content"] for c in cards if c["type"] == "markdown" and "last_successful_reading" in c["content"])
         self.assertIn("'stale'", note)
         self.assertIn("'last_successful_reading'", note)
         self.assertIn("last known reading", note)
+
+    def test_daily_graphs_pair_with_gauges_and_camera_is_live(self):
+        config = json.loads(
+            (Path(__file__).parents[1] / "examples/pool-dashboard.json").read_text()
+        )
+        sections = config["views"][0]["sections"]
+        for section in sections[:4]:
+            gauges = [c for c in section["cards"] if c["type"] == "gauge"]
+            graphs = [c for c in section["cards"] if c["type"] == "history-graph"]
+            self.assertEqual(len(gauges), 2)
+            self.assertEqual(len(graphs), 2)
+            self.assertEqual([c["entity"] for c in gauges], [c["entities"][0]["entity"] for c in graphs])
+            for graph in graphs:
+                self.assertEqual(graph["hours_to_show"], 24)
+                self.assertEqual(graph["grid_options"]["columns"], 6)
+        camera = next(c for c in sections[4]["cards"] if c["type"] == "picture-entity")
+        self.assertEqual(camera["entity"], "camera.backyard_live_view")
+        self.assertEqual(camera["camera_view"], "live")
+        self.assertEqual(camera["tap_action"]["action"], "more-info")
 
 
 if __name__ == "__main__":
