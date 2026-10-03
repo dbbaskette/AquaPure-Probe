@@ -40,11 +40,18 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(camera["tap_action"]["action"], "more-info")
         self.assertEqual(camera["aspect_ratio"], "21:9")
         entities = {c.get("entity") for c in self.sections[1]["cards"]}
-        self.assertTrue({"switch.pool_pump", "switch.spa_pump", "light.pool_light", "switch.pool_heater", "climate.pool"}.issubset(entities))
+        self.assertTrue({"switch.pool_pump", "switch.spa_pump", "switch.pool_heater", "climate.pool"}.issubset(entities))
         for card in self.sections[1]["cards"]:
-            if card.get("entity") in {"switch.pool_pump", "switch.spa_pump", "light.pool_light", "switch.pool_heater"}:
+            if card.get("entity") in {"switch.pool_pump", "switch.spa_pump", "switch.pool_heater"}:
                 self.assertNotIn("features", card)
                 self.assertEqual(card["tap_action"], {"action": "toggle"})
+
+    def test_pool_and_spa_lights_have_matching_top_switches(self):
+        lights = next(c for c in self.sections[1]["cards"] if c["type"] == "entities")
+        self.assertFalse(lights["show_header_toggle"])
+        self.assertEqual([e["entity"] for e in lights["entities"]], ["light.pool_light", "switch.spa_light"])
+        self.assertEqual([e["name"] for e in lights["entities"]], ["Pool lights", "Spa lights"])
+        self.assertFalse(any(c.get("entity") == "switch.spa_light" for c in self.sections[3]["cards"]))
 
 
 if __name__ == "__main__":
