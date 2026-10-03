@@ -70,19 +70,24 @@
               }
             },
             {
-              "type": "tile",
-              "entity": "light.pool_light",
-              "name": "Pool lights",
-              "icon": "mdi:lightbulb",
+              "type": "entities",
+              "show_header_toggle": false,
+              "state_color": true,
+              "entities": [
+                {
+                  "entity": "light.pool_light",
+                  "name": "Pool lights",
+                  "icon": "mdi:lightbulb"
+                },
+                {
+                  "entity": "switch.spa_light",
+                  "name": "Spa lights",
+                  "icon": "mdi:lightbulb"
+                }
+              ],
               "grid_options": {
-                "columns": 6,
-                "rows": 1
-              },
-              "tap_action": {
-                "action": "toggle"
-              },
-              "icon_tap_action": {
-                "action": "toggle"
+                "columns": 12,
+                "rows": "auto"
               }
             },
             {
@@ -454,17 +459,6 @@
               "entity": "switch.solar_heater",
               "name": "Solar heat",
               "icon": "mdi:white-balance-sunny",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ]
-            },
-            {
-              "type": "tile",
-              "entity": "switch.spa_light",
-              "name": "Spa lights",
-              "icon": "mdi:lightbulb",
               "features": [
                 {
                   "type": "toggle"
