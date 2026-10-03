@@ -36,7 +36,26 @@ The component uses the `iaqualink` dependency that is already used by Home
 Assistant's Jandy iAquaLink integration. It does not log credentials, tokens,
 or complete response bodies.
 
-## Optional dashboard artwork
+## Pool dashboard
+
+`examples/pool-dashboard.json` contains the deployed pool dashboard configuration
+(JSON is also valid YAML in Home Assistant's raw dashboard editor). Adjust the
+entity IDs for your installation before importing it.
+
+Water readings from all integrations appear together first: salt, free chlorine,
+pH, and water temperature, followed by alkalinity, stabilizer, hardness, and flow.
+Controls, heating settings, and equipment maintenance appear below. The sample
+age remains visible because chemistry readings are not necessarily live.
+
+The salt gauge highlights the **3,000–3,500 ppm** range recommended in the
+[Jandy AquaPure/PureLink manual, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf).
+The dashboard suggests **about 3,200 ppm** as a practical aim within that range;
+this is not a separate manufacturer-specified exact setpoint. The pH gauge's
+green band reflects the manual's 7.4–7.6 recommendation. The free-chlorine gauge
+uses a neutral color because interpretation also depends on stabilizer and the
+latest water assessment.
+
+### Optional dashboard artwork
 
 The `assets/aquapure-salt-hero.png` image is included for a Home Assistant
 `picture-elements` card. Copy it to Home Assistant's `config/www` directory and
