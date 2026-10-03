@@ -48,6 +48,26 @@ hardness, and flow.
 Controls, heating settings, and equipment maintenance appear below. The sample
 age remains visible because chemistry readings are not necessarily live.
 
+Every gauge is shown only for a numeric sensor state. An identically sized
+"Reading unavailable" card replaces it for missing, `unknown`, `unavailable`,
+or nonnumeric readings, then disappears automatically when data returns.
+Missing readings are never converted to zero. Salt is deliberately different:
+the integration retains its last valid observation, persists it across restarts,
+and exposes `stale`, `last_successful_reading`, and `update_status` attributes.
+The dashboard labels salt as "last reported" and displays a prominent warning
+and the original confirmation time when a poll cannot update it. Failed polls
+never advance that timestamp. No value is fabricated when no history exists.
+The cache is scoped to the configuration entry and controller serial; it cannot
+be carried over to a different pool. Other readings are not cached by this change.
+
+WebTouch can connect without rendering salt; this has been observed while the
+chlorinator reports standby. This display fallback does not fix that upstream
+omission or change any equipment settings. Existing installations can seed the
+new cache from a verified recorder observation (including its actual timestamp);
+never seed it from the dashboard target or a guessed value.
+
+Run regression checks with `python3 -m unittest discover -s tests -v`.
+
 The salt gauge highlights the **3,000–3,500 ppm** range recommended in the
 [Jandy AquaPure/PureLink manual, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf).
 The dashboard suggests **about 3,200 ppm** as a practical aim within that range;

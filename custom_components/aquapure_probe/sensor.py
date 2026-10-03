@@ -114,3 +114,21 @@ class AquaPureProbeSensor(CoordinatorEntity[AquaPureProbeCoordinator], SensorEnt
     def native_value(self) -> Any:
         """Return only the selected non-secret response field."""
         return self.coordinator.data.get(self.entity_description.data_key)
+
+    @property
+    def available(self) -> bool:
+        """Only salt may stay visible after a failed update, with a stale flag."""
+        if self.entity_description.data_key == "salt_ppm":
+            return self.coordinator.data.get("salt_ppm") is not None
+        return super().available and self.coordinator.data.get("probe_available", True)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self.entity_description.data_key != "salt_ppm":
+            return None
+        data = self.coordinator.data
+        return {
+            "stale": data.get("salt_stale", True) or not self.coordinator.last_update_success,
+            "last_successful_reading": data.get("salt_last_success"),
+            "update_status": data.get("webtouch_status"),
+        }
