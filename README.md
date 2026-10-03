@@ -14,6 +14,11 @@ general-purpose, supported Jandy integration.
 - boost state and remaining timer
 - salt PPM and SWC status when the cloud response supplies them
 
+When the normal cloud response omits salt, the probe also opens the same
+read-only legacy WebTouch display session used by the iAquaLink app and looks
+only for the rendered `Salt … PPM` text. It does not send commands to any pool
+equipment.
+
 ## Installation
 
 Copy `custom_components/aquapure_probe` into the Home Assistant configuration

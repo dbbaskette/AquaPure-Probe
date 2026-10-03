@@ -33,6 +33,7 @@ DESCRIPTIONS: tuple[ProbeSensorDescription, ...] = (
     ProbeSensorDescription(key="boost_hours_remaining", name="Boost hours remaining", native_unit_of_measurement="h", data_key="boost_hours_remaining"),
     ProbeSensorDescription(key="low_salt", name="Low salt flag", entity_category=EntityCategory.DIAGNOSTIC, data_key="low_salt"),
     ProbeSensorDescription(key="probe_response", name="Probe response", entity_category=EntityCategory.DIAGNOSTIC, data_key="probe_response"),
+    ProbeSensorDescription(key="webtouch_status", name="WebTouch probe", entity_category=EntityCategory.DIAGNOSTIC, data_key="webtouch_status"),
 )
 
 
