@@ -55,14 +55,30 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_free_chlorine",
-              "name": "Free chlorine",
+              "name": "Free chlorine · 1–3",
               "min": 0,
               "max": 10,
               "needle": true,
               "segments": [
                 {
                   "from": 0,
-                  "color": "#2596be"
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 0.5,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 1,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 3.01,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 5.01,
+                  "color": "#dc5b5b"
                 }
               ],
               "unit": "ppm",
@@ -74,7 +90,7 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_ph",
-              "name": "pH",
+              "name": "pH · 7.4–7.6",
               "min": 6.8,
               "max": 8.4,
               "needle": true,
@@ -125,48 +141,128 @@
               }
             },
             {
-              "type": "tile",
+              "type": "gauge",
               "entity": "sensor.atlantis_total_alkalinity",
-              "name": "Alkalinity",
-              "icon": "mdi:beaker-outline",
+              "name": "Alkalinity · 80–120",
+              "min": 0,
+              "max": 200,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 0,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 60,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 80,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 120.01,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 160.01,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "unit": "ppm",
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "color": "teal"
+                "rows": 3
+              }
             },
             {
-              "type": "tile",
+              "type": "gauge",
               "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
-              "name": "Stabilizer (CYA)",
-              "icon": "mdi:shield-sun-outline",
+              "name": "Stabilizer · 50–75",
+              "min": 0,
+              "max": 150,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 0,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 30,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 50,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 75.01,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 100.01,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "unit": "ppm",
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "color": "teal"
+                "rows": 3
+              }
             },
             {
-              "type": "tile",
+              "type": "gauge",
               "entity": "sensor.atlantis_calcium_hardness",
-              "name": "Calcium hardness",
-              "icon": "mdi:water-opacity",
+              "name": "Calcium · 175–400",
+              "min": 0,
+              "max": 700,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 0,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 150,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 175,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 400.01,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 500.01,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "unit": "ppm",
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "color": "teal"
+                "rows": 3
+              }
             },
             {
-              "type": "tile",
+              "type": "gauge",
               "entity": "sensor.atlantis_skimmer_flow",
               "name": "Skimmer flow",
-              "icon": "mdi:water-pump",
+              "min": 0,
+              "max": 40,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 0,
+                  "color": "#2596be"
+                }
+              ],
+              "unit": "gal/min",
               "grid_options": {
                 "columns": 6,
-                "rows": 1
-              },
-              "color": "teal"
+                "rows": 3
+              }
             },
             {
               "type": "markdown",
@@ -423,7 +519,7 @@
             },
             {
               "type": "markdown",
-              "content": "Salt gauge: green = recommended range; amber = outside the recommended range; red = beyond 2,000–4,000 ppm. Aim around 3,200 ppm.\n\n[Jandy salt guidance, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf). The pH green band reflects the manual’s 7.4–7.6 recommendation. Chlorine is shown as a reading; its interpretation also depends on stabilizer and the latest water assessment."
+              "content": "**Gauge guide**\n\nGreen = manufacturer reference range. Yellow = outside that range; red = farther outside. Yellow/red transitions are dashboard attention bands, not dosing instructions or swimming-safety limits.\n\n| Reading | Green range |\n|---|---|\n| Salt | 3,000–3,500 ppm |\n| Free chlorine | 1–3 ppm |\n| pH | 7.4–7.6 |\n| Alkalinity | 80–120 ppm |\n| Stabilizer (CYA) | 50–75 ppm |\n| Calcium hardness | 175–400 ppm |\n\n[Jandy reference, sections 4.5 and 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf). [Salt-pool chlorine guidance](https://support.waterguru.com/hc/en-us/articles/6469932272667-Does-the-WaterGuru-SENSE-work-in-salt-water-pools). Chlorine must be interpreted alongside CYA and sample age. Temperature and flow use neutral blue because they depend on comfort and equipment settings."
             }
           ]
         }
