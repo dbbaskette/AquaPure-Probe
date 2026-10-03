@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -9,6 +11,8 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
 from .coordinator import async_read_probe
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AquaPureProbeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -21,7 +25,15 @@ class AquaPureProbeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 result = await async_read_probe(user_input)
-            except Exception:
+            except Exception as err:
+                # Keep the form deliberately non-specific, but record a concise,
+                # non-secret diagnostic so the next attempt can distinguish an
+                # unsupported endpoint from a login or transport failure.
+                _LOGGER.warning(
+                    "AquaPure read-only probe did not complete (%s): %s",
+                    type(err).__name__,
+                    err,
+                )
                 errors["base"] = "cannot_connect"
             else:
                 await self.async_set_unique_id(f"aquapure_probe_{result['serial']}")
