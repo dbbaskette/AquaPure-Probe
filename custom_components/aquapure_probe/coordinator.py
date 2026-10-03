@@ -27,7 +27,9 @@ def _flatten_home(payload: Mapping[str, Any]) -> dict[str, Any]:
 async def async_read_probe(credentials: Mapping[str, str]) -> dict[str, Any]:
     """Run the two read-only requests and return normalized, non-secret data."""
     try:
-        from iaqualink import AqualinkClient
+        # Home Assistant packages iaqualink 0.7.x, which exposes its client
+        # from the client module rather than the package root.
+        from iaqualink.client import AqualinkClient
     except ImportError as err:
         raise HomeAssistantError(
             "The iaqualink library used by the Jandy integration is unavailable."
