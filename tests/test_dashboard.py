@@ -47,11 +47,20 @@ class DashboardTests(unittest.TestCase):
                 self.assertEqual(card["tap_action"], {"action": "toggle"})
 
     def test_pool_and_spa_lights_have_matching_top_switches(self):
-        lights = next(c for c in self.sections[1]["cards"] if c["type"] == "entities")
-        self.assertFalse(lights["show_header_toggle"])
-        self.assertEqual([e["entity"] for e in lights["entities"]], ["light.pool_light", "switch.spa_light"])
-        self.assertEqual([e["name"] for e in lights["entities"]], ["Pool lights", "Spa lights"])
+        lights = [c for c in self.sections[1]["cards"] if c["type"] == "entities"]
+        self.assertEqual(len(lights), 2)
+        self.assertTrue(all(not card["show_header_toggle"] for card in lights))
+        self.assertTrue(all(card["grid_options"]["columns"] == 6 for card in lights))
+        self.assertEqual([card["entities"][0]["entity"] for card in lights], ["light.pool_light", "switch.spa_light"])
+        self.assertEqual([card["entities"][0]["name"] for card in lights], ["Pool lights", "Spa lights"])
         self.assertFalse(any(c.get("entity") == "switch.spa_light" for c in self.sections[3]["cards"]))
+
+    def test_pool_heater_and_target_are_half_width(self):
+        cards = self.sections[1]["cards"]
+        heater = next(c for c in cards if c.get("entity") == "switch.pool_heater")
+        target = next(c for c in cards if c.get("entity") == "climate.pool")
+        self.assertEqual(heater["grid_options"]["columns"], 6)
+        self.assertEqual(target["grid_options"]["columns"], 6)
 
 
 if __name__ == "__main__":
