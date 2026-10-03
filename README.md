@@ -51,14 +51,37 @@ age remains visible because chemistry readings are not necessarily live.
 The salt gauge highlights the **3,000–3,500 ppm** range recommended in the
 [Jandy AquaPure/PureLink manual, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf).
 The dashboard suggests **about 3,200 ppm** as a practical aim within that range;
-this is not a separate manufacturer-specified exact setpoint. The pH gauge's
-green band reflects the manual's 7.4–7.6 recommendation. Chemistry green bands
-also follow section 4.5: free chlorine 1–3 ppm, alkalinity 80–120 ppm,
-stabilizer 50–75 ppm, and calcium hardness 175–400 ppm. Yellow and red mark
-progressively larger departures for dashboard attention; their transitions are
-display choices, not manufacturer dosing or swimming-safety limits. Chlorine
-must be interpreted alongside stabilizer and sample age. Temperature and flow
-remain neutral blue because their targets depend on comfort and equipment.
+this is not a separate manufacturer-specified exact setpoint. Salt's yellow/red
+margins are dashboard attention bands, not manufacturer limits.
+
+Chemistry and skimmer-flow gauges use the **pool-specific ranges returned by
+WaterGuru's dashboard service**, captured October 3, 2026. These take precedence
+over generic chemistry charts. The vendor's `GREEN_NORMAL` becomes the labeled
+target; `GREEN_MIN` and `GREEN_MAX` define the green band. Yellow/red bands also
+come from its `floatRanges`/`intRanges`, not invented warning margins.
+
+| Reading | Target | Green range | Yellow outer bounds | Scale |
+|---|---:|---|---|---|
+| Free chlorine (ppm) | 3 | 1.6–5.4 | 0.6–8.4 | 0–10 |
+| pH | 7.6 | 7.5–7.7 | 7.3–7.9 | 6.5–8.5 |
+| Alkalinity (ppm) | 80 | 50–130 | 40–160 | 0–240 |
+| Stabilizer/CYA (ppm) | 65 | 30–100 | 20–200 | 0–300 |
+| Calcium hardness (ppm) | 400 | 300–500 | 200–800 | 0–1,600 |
+| Skimmer flow (gal/min) | 15 | 5–79 | 2–89 | 0–90 |
+
+Green takes precedence inside the yellow outer bounds; readings beyond the
+yellow outer bounds are red. Upper transitions use a 0.01 offset so inclusive
+vendor maxima remain in their band at the sensors' reported precision.
+Temperature remains neutral blue. Gauge bands are a **static snapshot** and
+should be refreshed if WaterGuru changes the pool's configuration; live sensor
+readings continue to update normally.
+
+[WaterGuru's saltwater guidance](https://support.waterguru.com/hc/en-us/articles/52236844676635-Why-does-WaterGuru-recommend-a-Calcium-Hardness-level-of-400-ppm-for-my-Saltwater-chlorine-generator-pool)
+independently confirms pH 7.6 and calcium hardness 400 ppm targets. Its
+[CYA guidance](https://support.waterguru.com/hc/en-us/articles/4413641143323-Low-Cyanuric-Acid-CYA-Advice)
+explains that the target depends on sunlight and pool cover. These are this
+account's display ranges, not universal dosing or swimming-safety limits.
+Interpret chlorine alongside stabilizer, sample age, and WaterGuru advice.
 
 ### Optional dashboard artwork
 
