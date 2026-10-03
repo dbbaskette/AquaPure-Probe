@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AquaPure read-only probe",
+        "description": "This diagnostic integration performs only read requests to iAquaLink. It will not change chlorine production, boost, or equipment state.",
+        "data": {
+          "email": "iAquaLink email",
+          "password": "iAquaLink password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The controller did not accept the read-only AquaPure probe."
+    }
+  }
+}
