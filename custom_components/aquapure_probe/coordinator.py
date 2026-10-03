@@ -8,14 +8,25 @@ import logging
 import re
 import time
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
+
+from iaqualink.client import AqualinkClient
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.ssl import SSL_ALPN_HTTP11_HTTP2
 
-from .const import COMMAND_GET_HOME, COMMAND_GET_SWC_CONFIG, CONF_EMAIL, CONF_PASSWORD, DOMAIN, UPDATE_INTERVAL
+from .const import (
+    COMMAND_GET_HOME,
+    COMMAND_GET_SWC_CONFIG,
+    CONF_EMAIL,
+    CONF_PASSWORD,
+    DOMAIN,
+    UPDATE_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +34,8 @@ _WEBTOUCH_INIT_URL = "https://prm.iaqualink.net/v2/webtouch/init"
 _WEBTOUCH_COMMAND_URL = "https://prm.iaqualink.net/v2/webtouch/command"
 _WEBTOUCH_V1_INIT_URL = "https://prm.iaqualink.net/webtouch/init"
 _WEBTOUCH_V1_COMMAND_URL = "https://prm.iaqualink.net/webtouch/command"
+_PORTAL_USER_ID_URL = "https://prm.iaqualink.net/v2/userId"
+_PORTAL_LOCATIONS_URL = "https://prm.iaqualink.net/v2/users/{user_id}/locations"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
 _ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
 
@@ -53,17 +66,114 @@ async def _read_webtouch_salt(
     if not token or not serial or not isinstance(data, Mapping):
         return None, "not available"
 
-    # The app's Web launch uses a controller identifier.  Current and older
-    # API responses have used either the numeric record id or serial number.
-    # The official Owner's Portal launches WebTouch with ``device.touchLink``.
-    # Keep the older ID/serial candidates only as compatibility fallbacks.
-    action_ids = [
-        str(value)
-        for value in (data.get("touchLink"), data.get("id"), serial)
-        if value
-    ]
     session = async_get_clientsession(hass)
     headers = {"Authorization": str(token)}
+
+    async def get_portal_touch_links() -> list[str]:
+        """Resolve candidate WebTouch links used by the Owner's Portal."""
+
+        portal_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        try:
+            async with session.get(
+                _PORTAL_USER_ID_URL,
+                headers=portal_headers,
+                timeout=10,
+            ) as response:
+                if response.status != 200:
+                    return []
+                user_payload = await response.json(content_type=None)
+            if not isinstance(user_payload, Mapping):
+                return []
+            user_id = (
+                user_payload.get("session_user_id")
+                or user_payload.get("user_id")
+                or user_payload.get("id")
+            )
+            if not user_id:
+                return []
+
+            async with session.get(
+                _PORTAL_LOCATIONS_URL.format(user_id=quote(str(user_id), safe="")),
+                headers=portal_headers,
+                timeout=10,
+            ) as response:
+                if response.status != 200:
+                    return []
+                locations = await response.json(content_type=None)
+        except (asyncio.TimeoutError, ValueError):
+            return []
+        except Exception:
+            return []
+
+        candidates: list[tuple[str, set[str], set[str]]] = []
+
+        def visit(
+            value: Any,
+            inherited_identifiers: set[str] | None = None,
+            inherited_names: set[str] | None = None,
+        ) -> None:
+            if isinstance(value, Mapping):
+                identifiers = set(inherited_identifiers or ())
+                names = set(inherited_names or ())
+                identifiers.update(
+                    str(candidate)
+                    for key in (
+                        "serial_number",
+                        "serialNumber",
+                        "serial",
+                        "deviceId",
+                        "Id",
+                        "id",
+                    )
+                    if (candidate := value.get(key))
+                )
+                names.update(
+                    str(candidate).casefold()
+                    for key in (
+                        "name",
+                        "locationName",
+                        "systemName",
+                        "deviceName",
+                        "label",
+                    )
+                    if (candidate := value.get(key))
+                )
+                touch_link = value.get("touchLink") or value.get("touch_link")
+                if touch_link:
+                    candidates.append((str(touch_link), identifiers, names))
+                for child in value.values():
+                    visit(child, identifiers, names)
+            elif isinstance(value, list):
+                for child in value:
+                    visit(child, inherited_identifiers, inherited_names)
+
+        visit(locations)
+        system_name = str(getattr(system, "name", "")).casefold()
+        preferred_links = [
+            touch_link
+            for touch_link, identifiers, names in candidates
+            if str(serial) in identifiers or (system_name and system_name in names)
+        ]
+        all_links = [touch_link for touch_link, _, _ in candidates]
+        return list(dict.fromkeys([*preferred_links, *all_links]))
+
+    portal_touch_links = await get_portal_touch_links()
+
+    # The official Owner's Portal launches WebTouch with ``device.touchLink``.
+    # Keep the mobile API's record ID and serial only as compatibility fallbacks.
+    action_ids = [
+        str(value)
+        for value in (
+            *portal_touch_links,
+            data.get("touchLink"),
+            data.get("id"),
+            serial,
+        )
+        if value
+    ]
 
     async def start_data(
         action_id: str,
@@ -133,11 +243,24 @@ async def _read_webtouch_salt(
         except Exception:
             return None
 
+    connected_without_salt = False
+    target_name = str(getattr(system, "name", "")).casefold()
     for action_id in dict.fromkeys(action_ids):
         result = await start_data(action_id)
         if result is None:
             continue
         init_data, protocol = result
+
+        # Accounts can contain more than one pool. The initialized display's
+        # label is authoritative, so do not open a different controller merely
+        # because its link appeared first in the locations response.
+        display_label = init_data.get("label")
+        if (
+            target_name
+            and isinstance(display_label, str)
+            and display_label.casefold() != target_name
+        ):
+            continue
 
         # The mobile app may turn the controller identifier into a short-lived
         # display action ID before the actual WebTouch session is initialized.
@@ -154,18 +277,23 @@ async def _read_webtouch_salt(
 
         stream_url = init_data.get("serverConnection")
         start_action = init_data.get("actionIdMasterStart")
-        if not isinstance(stream_url, str) or not isinstance(start_action, str):
+        status_action = init_data.get("actionIdMasterId")
+        if not isinstance(stream_url, str) or not start_action or not status_action:
             continue
+
+        stream_started = asyncio.Event()
 
         async def consume_stream() -> int | None:
             text = ""
             try:
-                async with session.get(
-                    stream_url, headers=headers, timeout=12
-                ) as stream:
+                # The official page authenticates this long-lived request with
+                # the cookie set by ``init``; it does not attach the OAuth
+                # header used by the command endpoint.
+                async with session.get(stream_url, timeout=20) as stream:
                     if stream.status != 200:
                         return None
                     async for chunk in stream.content.iter_any():
+                        stream_started.set()
                         text = (text + chunk.decode("utf-8", "ignore"))[-16384:]
                         match = _SALT_PATTERN.search(text)
                         if match:
@@ -176,37 +304,69 @@ async def _read_webtouch_salt(
 
         stream_task = asyncio.create_task(consume_stream())
         try:
-            # This mirrors the WebTouch browser's initial display handshake.
-            # It starts no pool equipment and carries no equipment identifier.
-            if protocol == "v1":
-                command = session.get(
-                    _WEBTOUCH_V1_COMMAND_URL,
-                    params={
-                        "actionID": start_action,
-                        "command": "1",
-                        "dt": str(round(time.time() * 1000)),
-                        "sessionID": str(getattr(client, "client_id", "")),
-                    },
-                    timeout=10,
-                )
-            else:
-                command = session.post(
-                    _WEBTOUCH_COMMAND_URL,
-                    json={
-                        "actionID": start_action,
-                        "command": "1",
-                        "dt": str(round(time.time() * 1000)),
-                    },
-                    headers=headers,
-                    timeout=10,
-                )
-            async with command as response:
-                if response.status != 200:
-                    stream_task.cancel()
-                    await asyncio.gather(stream_task, return_exceptions=True)
-                    continue
+            async def send_display_command(
+                action_id: Any, command_id: str
+            ) -> tuple[bool, int | None]:
+                """Send a WebTouch display-navigation command."""
+                if protocol == "v1":
+                    request = session.get(
+                        _WEBTOUCH_V1_COMMAND_URL,
+                        params={
+                            "actionID": str(action_id),
+                            "command": command_id,
+                            "dt": str(round(time.time() * 1000)),
+                            "sessionID": str(getattr(client, "client_id", "")),
+                        },
+                        timeout=10,
+                    )
+                else:
+                    request = session.post(
+                        _WEBTOUCH_COMMAND_URL,
+                        json={
+                            "actionID": str(action_id),
+                            "command": command_id,
+                            "dt": str(round(time.time() * 1000)),
+                        },
+                        headers=headers,
+                        timeout=10,
+                    )
+                async with request as response:
+                    body = await response.text()
+                    match = _SALT_PATTERN.search(body)
+                    salt = int(match.group(1)) if match else None
+                    return response.status == 200, salt
+
+            # The vendor page opens the stream first and waits 2.5 seconds
+            # before sending its display-start command. Match that handshake
+            # timing, then navigate to the read-only Status page where
+            # AquaPure renders the salt PPM line.
+            await asyncio.sleep(2.5)
+            started, salt = await send_display_command(start_action, "1")
+            if not started:
+                stream_task.cancel()
+                await asyncio.gather(stream_task, return_exceptions=True)
+                continue
+            connected_without_salt = True
+            if salt is not None:
+                stream_task.cancel()
+                await asyncio.gather(stream_task, return_exceptions=True)
+                return salt, "connected"
+
+            await asyncio.wait_for(stream_started.wait(), timeout=8)
+            await asyncio.sleep(1)
+            status_opened, salt = await send_display_command(status_action, "6")
+            if not status_opened:
+                stream_task.cancel()
+                await asyncio.gather(stream_task, return_exceptions=True)
+                continue
+            if salt is not None:
+                stream_task.cancel()
+                await asyncio.gather(stream_task, return_exceptions=True)
+                return salt, "connected"
+
             salt = await stream_task
-            return salt, "connected" if salt is not None else "connected; salt not rendered"
+            if salt is not None:
+                return salt, "connected"
         except (asyncio.TimeoutError, ValueError):
             stream_task.cancel()
             await asyncio.gather(stream_task, return_exceptions=True)
@@ -214,23 +374,25 @@ async def _read_webtouch_salt(
             stream_task.cancel()
             await asyncio.gather(stream_task, return_exceptions=True)
 
-    return None, "not available"
+    return (
+        None,
+        "connected; salt not rendered"
+        if connected_without_salt
+        else "not available",
+    )
 
 
 async def async_read_probe(
     hass: HomeAssistant, credentials: Mapping[str, str]
 ) -> dict[str, Any]:
     """Run the two read-only requests and return normalized, non-secret data."""
-    try:
-        # Home Assistant packages iaqualink 0.7.x, which exposes its client
-        # from the client module rather than the package root.
-        from iaqualink.client import AqualinkClient
-    except ImportError as err:
-        raise HomeAssistantError(
-            "The iaqualink library used by the Jandy integration is unavailable."
-        ) from err
-
-    client = AqualinkClient(credentials[CONF_EMAIL], credentials[CONF_PASSWORD])
+    client = AqualinkClient(
+        credentials[CONF_EMAIL],
+        credentials[CONF_PASSWORD],
+        httpx_client=get_async_client(
+            hass, alpn_protocols=SSL_ALPN_HTTP11_HTTP2
+        ),
+    )
     try:
         await client.login()
         systems = await client.get_systems()
@@ -265,7 +427,11 @@ async def async_read_probe(
                 "webtouch_status": webtouch_status,
             }
     except Exception as err:  # Vendor library has several version-specific errors.
-        raise HomeAssistantError(f"AquaPure read-only probe failed: {err}") from err
+        error_name = type(err).__name__
+        _LOGGER.exception("AquaPure read-only probe failed (%s)", error_name)
+        raise HomeAssistantError(
+            f"AquaPure read-only probe failed ({error_name})"
+        ) from err
     finally:
         await client.close()
 

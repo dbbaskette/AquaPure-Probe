@@ -24,7 +24,7 @@ class AquaPureProbeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             try:
-                result = await async_read_probe(user_input)
+                result = await async_read_probe(self.hass, user_input)
             except Exception as err:
                 # Keep the form deliberately non-specific, but record a concise,
                 # non-secret diagnostic so the next attempt can distinguish an

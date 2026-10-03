@@ -3,8 +3,8 @@
   "name": "AquaPure Probe",
   "codeowners": [],
   "config_flow": true,
-  "documentation": "https://github.com/flz/iaqualink-py",
+  "documentation": "https://github.com/dbbaskette/AquaPure-Probe",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/flz/iaqualink-py/issues/94",
-  "version": "0.1.0"
+  "issue_tracker": "https://github.com/dbbaskette/AquaPure-Probe/issues",
+  "version": "0.2.0"
 }
