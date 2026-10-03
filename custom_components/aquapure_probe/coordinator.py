@@ -8,6 +8,7 @@ import logging
 import re
 import time
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -21,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 _WEBTOUCH_INIT_URL = "https://prm.iaqualink.net/v2/webtouch/init"
 _WEBTOUCH_COMMAND_URL = "https://prm.iaqualink.net/v2/webtouch/command"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
+_ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
 
 
 def _flatten_home(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -55,7 +57,7 @@ async def _read_webtouch_salt(
     session = async_get_clientsession(hass)
     headers = {"Authorization": str(token)}
 
-    for action_id in dict.fromkeys(action_ids):
+    async def start_data(action_id: str) -> Mapping[str, Any] | None:
         try:
             async with session.get(
                 _WEBTOUCH_INIT_URL,
@@ -64,15 +66,51 @@ async def _read_webtouch_salt(
                 timeout=10,
             ) as response:
                 if response.status != 200:
-                    continue
-                init_data = await response.json(content_type=None)
+                    return None
+                payload = await response.json(content_type=None)
+                return payload if isinstance(payload, Mapping) else None
         except (asyncio.TimeoutError, ValueError):
-            continue
+            return None
         except Exception:  # A display probe must never break normal SWC data.
+            return None
+
+    async def follow_mobile_link(url: str) -> str | None:
+        """Follow the app's Web handoff without retaining its signed URL."""
+        try:
+            async with session.get(
+                url, headers=headers, allow_redirects=True, timeout=10
+            ) as response:
+                # Some app handoffs are HTTP redirects; others are a short
+                # HTML page that performs the same redirect in JavaScript.
+                query = parse_qs(urlparse(str(response.url)).query)
+                action_ids = query.get("actionID")
+                if action_ids:
+                    return action_ids[0]
+                body = await response.text()
+                match = _ACTION_ID_PATTERN.search(body)
+                return match.group(1) if match else None
+        except (asyncio.TimeoutError, ValueError):
+            return None
+        except Exception:
+            return None
+
+    for action_id in dict.fromkeys(action_ids):
+        init_data = await start_data(action_id)
+        if init_data is None:
             continue
 
-        if not isinstance(init_data, Mapping):
-            continue
+        # The mobile app may turn the controller identifier into a short-lived
+        # display action ID before the actual WebTouch session is initialized.
+        # Follow only that signed handoff and keep no URL, token, or body.
+        mobile_link = init_data.get("mobileTouchUrl")
+        if isinstance(mobile_link, str):
+            redirected_action = await follow_mobile_link(mobile_link)
+            if not redirected_action:
+                continue
+            init_data = await start_data(redirected_action)
+            if init_data is None:
+                continue
+
         stream_url = init_data.get("serverConnection")
         start_action = init_data.get("actionIdMasterStart")
         if not isinstance(stream_url, str) or not isinstance(start_action, str):
