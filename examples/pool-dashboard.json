@@ -76,7 +76,7 @@
               "entities": [
                 {
                   "entity": "light.pool_light",
-                  "name": "Pool lights",
+                "name": "Pool",
                   "icon": "mdi:lightbulb"
                 }
               ],
@@ -92,7 +92,7 @@
               "entities": [
                 {
                   "entity": "switch.spa_light",
-                  "name": "Spa lights",
+                "name": "Spa",
                   "icon": "mdi:lightbulb"
                 }
               ],

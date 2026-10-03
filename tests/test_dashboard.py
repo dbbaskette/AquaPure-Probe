@@ -52,7 +52,7 @@ class DashboardTests(unittest.TestCase):
         self.assertTrue(all(not card["show_header_toggle"] for card in lights))
         self.assertTrue(all(card["grid_options"]["columns"] == 6 for card in lights))
         self.assertEqual([card["entities"][0]["entity"] for card in lights], ["light.pool_light", "switch.spa_light"])
-        self.assertEqual([card["entities"][0]["name"] for card in lights], ["Pool lights", "Spa lights"])
+        self.assertEqual([card["entities"][0]["name"] for card in lights], ["Pool", "Spa"])
         self.assertFalse(any(c.get("entity") == "switch.spa_light" for c in self.sections[3]["cards"]))
 
     def test_pool_heater_and_target_are_half_width(self):
