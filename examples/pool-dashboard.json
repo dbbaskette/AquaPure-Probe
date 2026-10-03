@@ -42,14 +42,15 @@
               "entity": "switch.pool_pump",
               "name": "Pool pump",
               "icon": "mdi:pump",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
               }
             },
             {
@@ -57,14 +58,15 @@
               "entity": "switch.spa_pump",
               "name": "Spa pump",
               "icon": "mdi:hot-tub",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
               }
             },
             {
@@ -75,6 +77,12 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
               }
             },
             {
@@ -82,14 +90,15 @@
               "entity": "switch.pool_heater",
               "name": "Pool heater",
               "icon": "mdi:fire",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 1
+              },
+              "tap_action": {
+                "action": "toggle"
+              },
+              "icon_tap_action": {
+                "action": "toggle"
               }
             },
             {

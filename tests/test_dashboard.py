@@ -41,6 +41,10 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(camera["aspect_ratio"], "21:9")
         entities = {c.get("entity") for c in self.sections[1]["cards"]}
         self.assertTrue({"switch.pool_pump", "switch.spa_pump", "light.pool_light", "switch.pool_heater", "climate.pool"}.issubset(entities))
+        for card in self.sections[1]["cards"]:
+            if card.get("entity") in {"switch.pool_pump", "switch.spa_pump", "light.pool_light", "switch.pool_heater"}:
+                self.assertNotIn("features", card)
+                self.assertEqual(card["tap_action"], {"action": "toggle"})
 
 
 if __name__ == "__main__":
