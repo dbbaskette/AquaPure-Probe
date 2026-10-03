@@ -92,6 +92,29 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("switch.low_speed", entities)
         self.assertNotIn("switch.solar_heater", entities)
 
+    def test_large_temperature_section_is_removed(self):
+        self.assertFalse(
+            any(
+                card["type"] == "thermostat"
+                for section in self.sections
+                for card in section["cards"]
+            )
+        )
+        self.assertFalse(
+            any(
+                card.get("heading") == "Temperature settings"
+                for section in self.sections
+                for card in section["cards"]
+            )
+        )
+        equipment = next(
+            section
+            for section in self.sections
+            if any(card.get("heading") == "Equipment & maintenance" for card in section["cards"])
+        )
+        air = next(card for card in equipment["cards"] if card.get("entity") == "sensor.air_temp")
+        self.assertEqual(air["grid_options"]["columns"], 6)
+
 
 if __name__ == "__main__":
     unittest.main()
