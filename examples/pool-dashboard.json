@@ -1,0 +1,433 @@
+{
+  "views": [
+    {
+      "title": "Pool",
+      "path": "pool",
+      "icon": "mdi:pool",
+      "type": "sections",
+      "max_columns": 2,
+      "sections": [
+        {
+          "type": "grid",
+          "column_span": 2,
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Water at a glance",
+              "icon": "mdi:water-check",
+              "heading_style": "title"
+            },
+            {
+              "type": "gauge",
+              "entity": "sensor.aquapure_probe_talokan_salt_level",
+              "name": "Salt · target 3,200",
+              "min": 1500,
+              "max": 4500,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 1500,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 2000,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 3000,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 3501,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 4001,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "unit": "ppm",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "gauge",
+              "entity": "sensor.atlantis_free_chlorine",
+              "name": "Free chlorine",
+              "min": 0,
+              "max": 10,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 0,
+                  "color": "#2596be"
+                }
+              ],
+              "unit": "ppm",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "gauge",
+              "entity": "sensor.atlantis_ph",
+              "name": "pH",
+              "min": 6.8,
+              "max": 8.4,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 6.8,
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 7.2,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 7.4,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 7.61,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 8,
+                  "color": "#dc5b5b"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "gauge",
+              "entity": "sensor.pool_temp",
+              "name": "Water temperature",
+              "min": 50,
+              "max": 100,
+              "needle": true,
+              "segments": [
+                {
+                  "from": 50,
+                  "color": "#2596be"
+                }
+              ],
+              "unit": "°F",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_total_alkalinity",
+              "name": "Alkalinity",
+              "icon": "mdi:beaker-outline",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "color": "teal"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
+              "name": "Stabilizer (CYA)",
+              "icon": "mdi:shield-sun-outline",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "color": "teal"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_calcium_hardness",
+              "name": "Calcium hardness",
+              "icon": "mdi:water-opacity",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "color": "teal"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_skimmer_flow",
+              "name": "Skimmer flow",
+              "icon": "mdi:water-pump",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              },
+              "color": "teal"
+            },
+            {
+              "type": "markdown",
+              "content": "**Salt goal: about 3,200 ppm** · Recommended range **3,000–3,500 ppm**.\n\n{% set sample = as_datetime(states('sensor.atlantis_last_measurement'), none) %}Chemistry sample: **{{ relative_time(sample) ~ ' ago' if sample else 'time unavailable' }}**. Salt and water temperature refresh separately.",
+              "grid_options": {
+                "columns": "full",
+                "rows": "auto"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_status",
+              "name": "Water assessment",
+              "icon": "mdi:water-alert",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "binary_sensor.atlantis_water_problem",
+              "name": "Water alert",
+              "icon": "mdi:alert-circle-outline",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Pool & spa controls",
+              "icon": "mdi:pool",
+              "heading_style": "title"
+            },
+            {
+              "type": "tile",
+              "entity": "switch.pool_pump",
+              "name": "Pool pump",
+              "icon": "mdi:pump",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.spa_pump",
+              "name": "Spa pump",
+              "icon": "mdi:hot-tub",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.spillover",
+              "name": "Spillover",
+              "icon": "mdi:waterfall",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.air_blower",
+              "name": "Air blower",
+              "icon": "mdi:weather-windy",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.pool_heater",
+              "name": "Pool heater",
+              "icon": "mdi:fire",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.spa_heater",
+              "name": "Spa heater",
+              "icon": "mdi:fire",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.solar_heater",
+              "name": "Solar heat",
+              "icon": "mdi:white-balance-sunny",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "switch.spa_light",
+              "name": "Spa lights",
+              "icon": "mdi:lightbulb",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "light.pool_light",
+              "name": "Pool lights",
+              "icon": "mdi:lightbulb"
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Temperature settings",
+              "icon": "mdi:thermometer",
+              "heading_style": "title"
+            },
+            {
+              "type": "thermostat",
+              "entity": "climate.pool",
+              "name": "Pool heat"
+            },
+            {
+              "type": "thermostat",
+              "entity": "climate.spa",
+              "name": "Spa heat"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.air_temp",
+              "name": "Air temperature",
+              "icon": "mdi:weather-sunny"
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "column_span": 2,
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Equipment & maintenance",
+              "icon": "mdi:wrench-outline",
+              "heading_style": "title"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.aquapure_probe_talokan_pool_chlorine_output",
+              "name": "Pool chlorine output",
+              "icon": "mdi:water-percent",
+              "color": "cyan"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.aquapure_probe_talokan_spa_chlorine_output",
+              "name": "Spa chlorine output",
+              "icon": "mdi:hot-tub",
+              "color": "teal"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.aquapure_probe_talokan_chlorinator_status",
+              "name": "Chlorinator",
+              "icon": "mdi:check-circle-outline"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.aquapure_probe_talokan_boost_status",
+              "name": "Boost",
+              "icon": "mdi:rocket-launch-outline"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_sense_battery",
+              "name": "Sensor battery",
+              "icon": "mdi:battery"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.atlantis_sense_cassette",
+              "name": "Test cassette remaining",
+              "icon": "mdi:test-tube"
+            },
+            {
+              "type": "tile",
+              "entity": "binary_sensor.atlantis_sense_battery_low",
+              "name": "Battery alert",
+              "icon": "mdi:battery-alert-variant-outline"
+            },
+            {
+              "type": "tile",
+              "entity": "binary_sensor.atlantis_sense_cassette_low",
+              "name": "Cassette alert",
+              "icon": "mdi:water-alert-outline"
+            },
+            {
+              "type": "entities",
+              "title": "Additional details",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "sensor.atlantis_last_measurement",
+                  "name": "Last chemistry sample"
+                },
+                {
+                  "entity": "sensor.atlantis_water_temperature",
+                  "name": "Temperature at last sample"
+                },
+                {
+                  "entity": "sensor.atlantis_total_hardness",
+                  "name": "Total hardness"
+                },
+                {
+                  "entity": "binary_sensor.freeze_protection",
+                  "name": "Freeze protection"
+                },
+                {
+                  "entity": "binary_sensor.is_icl_present",
+                  "name": "Chlorinator connection"
+                },
+                {
+                  "entity": "sensor.relay_count",
+                  "name": "Active relays"
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "Salt gauge: green = recommended range; amber = outside the recommended range; red = beyond 2,000–4,000 ppm. Aim around 3,200 ppm.\n\n[Jandy salt guidance, section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf). The pH green band reflects the manual’s 7.4–7.6 recommendation. Chlorine is shown as a reading; its interpretation also depends on stabilizer and the latest water assessment."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
