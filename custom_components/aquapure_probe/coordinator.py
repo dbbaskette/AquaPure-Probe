@@ -12,11 +12,14 @@ from urllib.parse import parse_qs, quote, urlparse
 
 from iaqualink.client import AqualinkClient
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.httpx_client import get_async_client
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 from homeassistant.util.ssl import SSL_ALPN_HTTP11_HTTP2
 
 from .const import (
@@ -27,6 +30,7 @@ from .const import (
     DOMAIN,
     UPDATE_INTERVAL,
 )
+from .salt_cache import numeric_salt, retain_salt, valid_cache
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -412,6 +416,7 @@ async def async_read_probe(
             webtouch_salt, webtouch_status = await _read_webtouch_salt(
                 hass, client, system
             )
+            home_salt = numeric_salt(home.get("pool_salinity"))
             return {
                 "serial": str(getattr(system, "serial", "unknown")),
                 "system_name": str(getattr(system, "name", "Pool")),
@@ -420,7 +425,7 @@ async def async_read_probe(
                 "boost_status": swc.get("boostStatus", home.get("swc_boost")),
                 "boost_hours_remaining": swc.get("remainingBoostHrs"),
                 "boost_minutes_remaining": swc.get("remainingBoostMins"),
-                "salt_ppm": home.get("pool_salinity") or webtouch_salt,
+                "salt_ppm": home_salt if home_salt is not None else webtouch_salt,
                 "swc_status": (home.get("swc_info") or {}).get("swcPoolStatus"),
                 "low_salt": home.get("swc_low"),
                 "probe_response": swc.get("response"),
@@ -441,17 +446,37 @@ async def async_read_probe(
 class AquaPureProbeCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Fetch AquaPure diagnostic values without issuing write commands."""
 
-    def __init__(self, hass: HomeAssistant, credentials: Mapping[str, str]) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
+            config_entry=entry,
             update_interval=UPDATE_INTERVAL,
         )
-        self.credentials = credentials
+        self.credentials = entry.data
+        self._salt_cache: dict[str, Any] | None = None
+        self._salt_store = Store(hass, 1, f"{DOMAIN}.salt.{entry.entry_id}")
+
+    async def _async_setup(self) -> None:
+        self._salt_cache = valid_cache(await self._salt_store.async_load())
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await async_read_probe(self.hass, self.credentials)
+            data = await async_read_probe(self.hass, self.credentials)
+            data["probe_available"] = True
         except HomeAssistantError as err:
-            raise UpdateFailed(str(err)) from err
+            if self._salt_cache is None:
+                raise UpdateFailed(str(err)) from err
+            # Retain only salt on a failed poll, never stale control/status data.
+            data = {
+                "serial": self._salt_cache["serial"],
+                "system_name": self._salt_cache["system_name"],
+                "probe_available": False,
+                "webtouch_status": "update failed; showing last known salt",
+            }
+        data, cached = retain_salt(data, self._salt_cache, dt_util.utcnow().isoformat())
+        if cached != self._salt_cache:
+            self._salt_cache = cached
+            await self._salt_store.async_save(cached)
+        return data

@@ -20,7 +20,7 @@
             {
               "type": "gauge",
               "entity": "sensor.aquapure_probe_talokan_salt_level",
-              "name": "Salt · target 3,200",
+              "name": "Salt · last reported",
               "min": 1500,
               "max": 4500,
               "needle": true,
@@ -47,6 +47,35 @@
                 }
               ],
               "unit": "ppm",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.aquapure_probe_talokan_salt_level",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Salt\n\n**Reading unavailable**\n\nWaiting for controller data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.aquapure_probe_talokan_salt_level",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 3
@@ -85,6 +114,35 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_free_chlorine",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Free chlorine\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_free_chlorine",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
               }
             },
             {
@@ -119,6 +177,35 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_ph",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### pH\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_ph",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
               }
             },
             {
@@ -135,6 +222,35 @@
                 }
               ],
               "unit": "°F",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.pool_temp",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Water temperature\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.pool_temp",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 3
@@ -173,6 +289,35 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_total_alkalinity",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Alkalinity\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_total_alkalinity",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
               }
             },
             {
@@ -205,6 +350,35 @@
                 }
               ],
               "unit": "ppm",
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Stabilizer\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
               "grid_options": {
                 "columns": 6,
                 "rows": 3
@@ -243,6 +417,35 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_calcium_hardness",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Calcium\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_calcium_hardness",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
               }
             },
             {
@@ -278,11 +481,40 @@
               "grid_options": {
                 "columns": 6,
                 "rows": 3
+              },
+              "visibility": [
+                {
+                  "condition": "numeric_state",
+                  "entity": "sensor.atlantis_skimmer_flow",
+                  "above": -1e+100,
+                  "below": 1e+100
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "### Skimmer flow\n\n**Reading unavailable**\n\nWaiting for sensor data.",
+              "visibility": [
+                {
+                  "condition": "not",
+                  "conditions": [
+                    {
+                      "condition": "numeric_state",
+                      "entity": "sensor.atlantis_skimmer_flow",
+                      "above": -1e+100,
+                      "below": 1e+100
+                    }
+                  ]
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 3
               }
             },
             {
               "type": "markdown",
-              "content": "**Salt goal: about 3,200 ppm** · Recommended range **3,000–3,500 ppm**.\n\n{% set sample = as_datetime(states('sensor.atlantis_last_measurement'), none) %}Chemistry sample: **{{ relative_time(sample) ~ ' ago' if sample else 'time unavailable' }}**. Salt and water temperature refresh separately.",
+              "content": "{% set salt_entity = 'sensor.aquapure_probe_talokan_salt_level' %}\n{% set confirmed = as_datetime(state_attr(salt_entity, 'last_successful_reading'), none) %}\n{% if state_attr(salt_entity, 'stale') or states(salt_entity) in ['unknown', 'unavailable'] %}\n**⚠ Salt: last known reading — update unavailable.**\n{% else %}\n**Salt reading confirmed.**\n{% endif %}\n{% if confirmed %}Last confirmed **{{ relative_time(confirmed) }} ago** · {{ as_local(confirmed).strftime('%b %-d, %-I:%M %p') }}.{% endif %}\n\nSalt goal: **about 3,200 ppm** · Range **3,000–3,500 ppm**.\n\n{% set sample = as_datetime(states('sensor.atlantis_last_measurement'), none) %}Chemistry sample: **{{ relative_time(sample) ~ ' ago' if sample else 'time unavailable' }}**. Salt and water temperature refresh separately.",
               "grid_options": {
                 "columns": "full",
                 "rows": "auto"
