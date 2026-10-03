@@ -55,7 +55,7 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_free_chlorine",
-              "name": "Free chlorine · 1–3",
+              "name": "Free chlorine · target 3",
               "min": 0,
               "max": 10,
               "needle": true,
@@ -65,19 +65,19 @@
                   "color": "#dc5b5b"
                 },
                 {
-                  "from": 0.5,
+                  "from": 0.6,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 1,
+                  "from": 1.6,
                   "color": "#2da995"
                 },
                 {
-                  "from": 3.01,
+                  "from": 5.41,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 5.01,
+                  "from": 8.41,
                   "color": "#dc5b5b"
                 }
               ],
@@ -90,29 +90,29 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_ph",
-              "name": "pH · 7.4–7.6",
-              "min": 6.8,
-              "max": 8.4,
+              "name": "pH · target 7.6",
+              "min": 6.5,
+              "max": 8.5,
               "needle": true,
               "segments": [
                 {
-                  "from": 6.8,
+                  "from": 6.5,
                   "color": "#dc5b5b"
                 },
                 {
-                  "from": 7.2,
+                  "from": 7.3,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 7.4,
+                  "from": 7.5,
                   "color": "#2da995"
                 },
                 {
-                  "from": 7.61,
+                  "from": 7.71,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 8,
+                  "from": 7.91,
                   "color": "#dc5b5b"
                 }
               ],
@@ -143,9 +143,9 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_total_alkalinity",
-              "name": "Alkalinity · 80–120",
+              "name": "Alkalinity · target 80",
               "min": 0,
-              "max": 200,
+              "max": 240,
               "needle": true,
               "segments": [
                 {
@@ -153,15 +153,15 @@
                   "color": "#dc5b5b"
                 },
                 {
-                  "from": 60,
+                  "from": 40,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 80,
+                  "from": 50,
                   "color": "#2da995"
                 },
                 {
-                  "from": 120.01,
+                  "from": 130.01,
                   "color": "#e6ac38"
                 },
                 {
@@ -178,9 +178,9 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_cyanuric_acid_stabilizer",
-              "name": "Stabilizer · 50–75",
+              "name": "Stabilizer · target 65",
               "min": 0,
-              "max": 150,
+              "max": 300,
               "needle": true,
               "segments": [
                 {
@@ -188,19 +188,19 @@
                   "color": "#dc5b5b"
                 },
                 {
-                  "from": 30,
+                  "from": 20,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 50,
+                  "from": 30,
                   "color": "#2da995"
                 },
                 {
-                  "from": 75.01,
+                  "from": 100.01,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 100.01,
+                  "from": 200.01,
                   "color": "#dc5b5b"
                 }
               ],
@@ -213,9 +213,9 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_calcium_hardness",
-              "name": "Calcium · 175–400",
+              "name": "Calcium · target 400",
               "min": 0,
-              "max": 700,
+              "max": 1600,
               "needle": true,
               "segments": [
                 {
@@ -223,19 +223,19 @@
                   "color": "#dc5b5b"
                 },
                 {
-                  "from": 150,
+                  "from": 200,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 175,
+                  "from": 300,
                   "color": "#2da995"
                 },
                 {
-                  "from": 400.01,
+                  "from": 500.01,
                   "color": "#e6ac38"
                 },
                 {
-                  "from": 500.01,
+                  "from": 800.01,
                   "color": "#dc5b5b"
                 }
               ],
@@ -248,14 +248,30 @@
             {
               "type": "gauge",
               "entity": "sensor.atlantis_skimmer_flow",
-              "name": "Skimmer flow",
+              "name": "Skimmer flow · target 15",
               "min": 0,
-              "max": 40,
+              "max": 90,
               "needle": true,
               "segments": [
                 {
                   "from": 0,
-                  "color": "#2596be"
+                  "color": "#dc5b5b"
+                },
+                {
+                  "from": 2,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 5,
+                  "color": "#2da995"
+                },
+                {
+                  "from": 79.01,
+                  "color": "#e6ac38"
+                },
+                {
+                  "from": 89.01,
+                  "color": "#dc5b5b"
                 }
               ],
               "unit": "gal/min",
@@ -519,7 +535,7 @@
             },
             {
               "type": "markdown",
-              "content": "**Gauge guide**\n\nGreen = manufacturer reference range. Yellow = outside that range; red = farther outside. Yellow/red transitions are dashboard attention bands, not dosing instructions or swimming-safety limits.\n\n| Reading | Green range |\n|---|---|\n| Salt | 3,000–3,500 ppm |\n| Free chlorine | 1–3 ppm |\n| pH | 7.4–7.6 |\n| Alkalinity | 80–120 ppm |\n| Stabilizer (CYA) | 50–75 ppm |\n| Calcium hardness | 175–400 ppm |\n\n[Jandy reference, sections 4.5 and 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf). [Salt-pool chlorine guidance](https://support.waterguru.com/hc/en-us/articles/6469932272667-Does-the-WaterGuru-SENSE-work-in-salt-water-pools). Chlorine must be interpreted alongside CYA and sample age. Temperature and flow use neutral blue because they depend on comfort and equipment settings."
+              "content": "**Gauge guide**\n\nChemistry and flow colors match the ranges WaterGuru supplies for this pool. Labels show its preferred targets; green spans its acceptable band.\n\n| Reading | Target | Green range |\n|---|---|---|\n| Salt | ~3,200 ppm | 3,000–3,500 ppm |\n| Free chlorine | 3 ppm | 1.6–5.4 ppm |\n| pH | 7.6 | 7.5–7.7 |\n| Alkalinity | 80 ppm | 50–130 ppm |\n| Stabilizer (CYA) | 65 ppm | 30–100 ppm |\n| Calcium hardness | 400 ppm | 300–500 ppm |\n| Skimmer flow | 15 gal/min | 5–79 gal/min |\n\nWaterGuru account ranges captured October 3, 2026; these gauge bands are a saved snapshot, not automatically updated. [WaterGuru saltwater targets](https://support.waterguru.com/hc/en-us/articles/52236844676635-Why-does-WaterGuru-recommend-a-Calcium-Hardness-level-of-400-ppm-for-my-Saltwater-chlorine-generator-pool) support pH 7.6 and calcium 400 ppm. CYA targets depend on pool conditions.\n\nSalt uses [Jandy section 4.7](https://www.jandy.com/-/media/zodiac/global/downloads/jandy/water-sanitizers/h0325600.pdf); its yellow/red margins remain dashboard attention bands. Temperature stays neutral blue. Colors are not dosing instructions or swimming-safety certification; consider CYA, sample age, and WaterGuru advice."
             }
           ]
         }
