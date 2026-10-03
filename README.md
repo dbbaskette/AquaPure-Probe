@@ -45,8 +45,10 @@ entity IDs for your installation before importing it.
 Water readings appear together in one compact grid with no per-pair headings.
 Each reading combines a value, colored range bar, and 24-hour recorded trend in
 one card. The grid uses four columns on larger screens and two on phones. The
-Backyard Ring camera sits beside quick controls on larger screens and stacks
-above them on phones. Additional controls and maintenance remain below.
+Backyard Ring camera and quick controls come first, side by side on larger screens
+and stacked on phones. The short 21:9 camera preview opens camera details when
+tapped. Readings follow immediately; sample age, retained-salt warnings and water
+status stay with the readings. Additional controls and maintenance remain below.
 
 Copy `www/pool-readings-card.js` to Home Assistant's `/config/www/` and register
 `/local/pool-readings-card.js?v=1` as a **JavaScript module** dashboard resource

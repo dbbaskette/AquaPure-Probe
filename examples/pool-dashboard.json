@@ -9,6 +9,107 @@
       "sections": [
         {
           "type": "grid",
+          "cards": [
+            {
+              "type": "picture-entity",
+              "entity": "camera.backyard_live_view",
+              "name": "Backyard · pool",
+              "camera_view": "live",
+              "aspect_ratio": "21:9",
+              "show_name": true,
+              "show_state": false,
+              "tap_action": {
+                "action": "more-info"
+              },
+              "grid_options": {
+                "columns": 12,
+                "rows": "auto"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Quick controls",
+              "icon": "mdi:tune-variant",
+              "heading_style": "subtitle"
+            },
+            {
+              "type": "tile",
+              "entity": "switch.pool_pump",
+              "name": "Pool pump",
+              "icon": "mdi:pump",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "switch.spa_pump",
+              "name": "Spa pump",
+              "icon": "mdi:hot-tub",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "light.pool_light",
+              "name": "Pool lights",
+              "icon": "mdi:lightbulb",
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "switch.pool_heater",
+              "name": "Pool heater",
+              "icon": "mdi:fire",
+              "features": [
+                {
+                  "type": "toggle"
+                }
+              ],
+              "grid_options": {
+                "columns": 6,
+                "rows": 1
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "climate.pool",
+              "name": "Pool heat target",
+              "features": [
+                {
+                  "type": "target-temperature"
+                }
+              ],
+              "grid_options": {
+                "columns": 12,
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
           "column_span": 2,
           "cards": [
             {
@@ -273,113 +374,6 @@
               "grid_options": {
                 "columns": "full",
                 "rows": "auto"
-              }
-            }
-          ]
-        },
-        {
-          "type": "grid",
-          "cards": [
-            {
-              "type": "heading",
-              "heading": "Backyard",
-              "icon": "mdi:cctv",
-              "heading_style": "subtitle"
-            },
-            {
-              "type": "picture-entity",
-              "entity": "camera.backyard_live_view",
-              "name": "Backyard · pool",
-              "camera_view": "live",
-              "aspect_ratio": "16:9",
-              "show_name": true,
-              "show_state": false,
-              "tap_action": {
-                "action": "more-info"
-              },
-              "grid_options": {
-                "columns": 12,
-                "rows": "auto"
-              }
-            }
-          ]
-        },
-        {
-          "type": "grid",
-          "cards": [
-            {
-              "type": "heading",
-              "heading": "Quick controls",
-              "icon": "mdi:tune-variant",
-              "heading_style": "subtitle"
-            },
-            {
-              "type": "tile",
-              "entity": "switch.pool_pump",
-              "name": "Pool pump",
-              "icon": "mdi:pump",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 1
-              }
-            },
-            {
-              "type": "tile",
-              "entity": "switch.spa_pump",
-              "name": "Spa pump",
-              "icon": "mdi:hot-tub",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 1
-              }
-            },
-            {
-              "type": "tile",
-              "entity": "light.pool_light",
-              "name": "Pool lights",
-              "icon": "mdi:lightbulb",
-              "grid_options": {
-                "columns": 6,
-                "rows": 1
-              }
-            },
-            {
-              "type": "tile",
-              "entity": "switch.pool_heater",
-              "name": "Pool heater",
-              "icon": "mdi:fire",
-              "features": [
-                {
-                  "type": "toggle"
-                }
-              ],
-              "grid_options": {
-                "columns": 6,
-                "rows": 1
-              }
-            },
-            {
-              "type": "tile",
-              "entity": "climate.pool",
-              "name": "Pool heat target",
-              "features": [
-                {
-                  "type": "target-temperature"
-                }
-              ],
-              "grid_options": {
-                "columns": 12,
-                "rows": 2
               }
             },
             {

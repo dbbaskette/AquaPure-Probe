@@ -10,7 +10,7 @@ class DashboardTests(unittest.TestCase):
         self.sections = self.config["views"][0]["sections"]
 
     def test_readings_are_one_headerless_compact_grid(self):
-        cards = self.sections[0]["cards"]
+        cards = self.sections[2]["cards"]
         self.assertFalse(any(c["type"] == "heading" for c in cards))
         self.assertEqual(cards[0]["type"], "custom:pool-readings-card")
         readings = cards[0]["readings"]
@@ -24,21 +24,22 @@ class DashboardTests(unittest.TestCase):
                 self.assertEqual(stops[0], r["min"])
                 self.assertLess(stops[-1], r["max"])
 
-    def test_salt_staleness_is_visible_before_camera(self):
-        note = self.sections[0]["cards"][1]["content"]
+    def test_salt_staleness_stays_with_readings(self):
+        note = self.sections[2]["cards"][1]["content"]
         self.assertIn("'stale'", note)
         self.assertIn("'last_successful_reading'", note)
         self.assertIn("last known reading", note)
 
     def test_camera_is_beside_quick_controls(self):
         self.assertEqual(self.config["views"][0]["max_columns"], 2)
+        self.assertEqual(self.sections[0].get("column_span", 1), 1)
         self.assertEqual(self.sections[1].get("column_span", 1), 1)
-        self.assertEqual(self.sections[2].get("column_span", 1), 1)
-        camera = next(c for c in self.sections[1]["cards"] if c["type"] == "picture-entity")
+        camera = next(c for c in self.sections[0]["cards"] if c["type"] == "picture-entity")
         self.assertEqual(camera["entity"], "camera.backyard_live_view")
         self.assertEqual(camera["camera_view"], "live")
         self.assertEqual(camera["tap_action"]["action"], "more-info")
-        entities = {c.get("entity") for c in self.sections[2]["cards"]}
+        self.assertEqual(camera["aspect_ratio"], "21:9")
+        entities = {c.get("entity") for c in self.sections[1]["cards"]}
         self.assertTrue({"switch.pool_pump", "switch.spa_pump", "light.pool_light", "switch.pool_heater", "climate.pool"}.issubset(entities))
 
 
