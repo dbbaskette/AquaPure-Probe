@@ -47,7 +47,7 @@ async def async_read_probe(credentials: Mapping[str, str]) -> dict[str, Any]:
             # No state-changing command is called by this component.
             home_response = await sender(
                 COMMAND_GET_HOME,
-                {"attached_test": "true", "country": client.country},
+                {"attached_test": "true", "country": getattr(client, "country", "US")},
             )
             swc_response = await sender(COMMAND_GET_SWC_CONFIG)
             home = _flatten_home(home_response.json())
