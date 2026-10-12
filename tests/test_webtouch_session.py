@@ -18,7 +18,7 @@ NODES = [node for node in TREE.body if (
         isinstance(t, ast.Name) and t.id.startswith(('_WEBTOUCH_', '_PORTAL_', '_SALT_', '_ACTION_'))
         for t in node.targets
     )
-) or isinstance(node, ast.AsyncFunctionDef) and node.name == '_read_webtouch_salt']
+) or isinstance(node, ast.AsyncFunctionDef) and node.name in ('_read_webtouch_salt', '_read_webtouch_salt_session')]
 
 async def no_delay(_):
     pass
@@ -47,7 +47,10 @@ class Session:
     def __init__(self, protocol='v2', stream_url='https://webtouch.iaqualink.net/display'):
         self.protocol, self.stream_url = protocol, stream_url
         self.calls = []
+        self.closed = False
         self.status_opened = asyncio.Event()
+    async def __aenter__(self): return self
+    async def __aexit__(self, *args): self.closed = True
     def get(self, url, **kwargs):
         self.calls.append(('GET', url, kwargs))
         if url.endswith('/userId'): return Response({'id': 'test-user'})
@@ -82,7 +85,7 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         names = {'Mapping': Mapping, 'Any': Any, 'HomeAssistant': Any, 're': re,
                  'parse_qs': parse_qs, 'urlparse': urlparse, 'quote': quote,
                  'time': __import__('time'),
-                 'async_get_clientsession': lambda _: session,
+                 'async_create_clientsession': session if callable(session) else lambda _, **kwargs: session,
                  'asyncio': SimpleNamespace(sleep=no_delay, Event=asyncio.Event,
                      create_task=asyncio.create_task, wait_for=asyncio.wait_for,
                      gather=asyncio.gather, TimeoutError=asyncio.TimeoutError)}
@@ -95,8 +98,22 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.read(session), (2700, 'connected'))
         commands = [kw['json']['command'] for method, _, kw in session.calls if method == 'POST']
         self.assertEqual(commands, ['1', '6'])
+        self.assertTrue(session.closed)
     async def test_v1_cookie_reaches_stream_and_display_commands(self):
         self.assertEqual(await self.read(Session(protocol='v1')), (2700, 'connected'))
+    async def test_consecutive_polls_create_and_close_separate_sessions(self):
+        created = []
+        def create_session(_, **kwargs):
+            self.assertFalse(kwargs['auto_cleanup'])
+            session = Session()
+            created.append(session)
+            return session
+        for _ in range(2):
+            self.assertEqual(await self.read(create_session), (2700, 'connected'))
+            self.assertTrue(created[-1].closed)
+        self.assertEqual(len(created), 2)
+        self.assertIsNot(created[0], created[1])
+
     async def test_session_cookie_never_sent_to_untrusted_stream(self):
         for url in ('https://example.com/display', 'http://webtouch.iaqualink.net/display',
                     'https://webtouch.iaqualink.net:444/display',

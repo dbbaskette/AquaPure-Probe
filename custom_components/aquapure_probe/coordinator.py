@@ -15,7 +15,7 @@ from iaqualink.client import AqualinkClient
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -58,6 +58,16 @@ async def _read_webtouch_salt(
     client: Any,
     system: Any,
 ) -> tuple[int | None, str]:
+    """Use an isolated, short-lived cookie jar for each WebTouch display read."""
+    async with async_create_clientsession(hass, auto_cleanup=False) as session:
+        return await _read_webtouch_salt_session(session, client, system)
+
+
+async def _read_webtouch_salt_session(
+    session: Any,
+    client: Any,
+    system: Any,
+) -> tuple[int | None, str]:
     """Read the legacy WebTouch display stream without issuing equipment commands.
 
     WebTouch has a separate, server-pushed display protocol.  Its initial
@@ -70,7 +80,6 @@ async def _read_webtouch_salt(
     if not token or not serial or not isinstance(data, Mapping):
         return None, "not available"
 
-    session = async_get_clientsession(hass)
     headers = {"Authorization": str(token)}
 
     async def get_portal_touch_links() -> list[str]:

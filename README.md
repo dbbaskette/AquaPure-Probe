@@ -26,7 +26,9 @@ The display stream is hosted separately on `webtouch.iaqualink.net`, so the
 probe explicitly supplies that cookie to the display stream and its navigation
 requests rather than relying on automatic cookie-jar domain matching. The
 cookie stays local to each initialized display attempt; it is never logged,
-stored, forwarded to another host, or carried through a stream redirect.
+persisted, forwarded to another host, or carried through a stream redirect.
+Each poll creates and closes its own HTTP session, so a later poll cannot reuse
+display-session cookies left behind by an earlier read or another integration.
 
 All sensor entities are created even when a value is temporarily unavailable,
 so a chlorinator that is off during Home Assistant startup can recover on a
