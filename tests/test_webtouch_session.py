@@ -40,12 +40,14 @@ class Display:
     async def iter_any(self):
         yield b"<script>parent.printNL('screen','Home');</script>"
         await self.session.status_opened.wait()
-        yield b"<script>parent.printNL('text','Salt 2700 PPM');</script>"
+        for chunk in self.session.salt_chunks:
+            yield chunk
 
 class Session:
     """Require explicit cookies instead of relying on a shared cookie jar."""
     def __init__(self, protocol='v2', stream_url='https://webtouch.iaqualink.net/display'):
         self.protocol, self.stream_url = protocol, stream_url
+        self.salt_chunks = [b"<script>parent.printNL('text','Salt 2700 PPM');</script>"]
         self.calls = []
         self.closed = False
         self.status_opened = asyncio.Event()
@@ -101,6 +103,16 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(session.closed)
     async def test_v1_cookie_reaches_stream_and_display_commands(self):
         self.assertEqual(await self.read(Session(protocol='v1')), (2700, 'connected'))
+    async def test_large_display_flush_does_not_trim_salt_before_parsing(self):
+        session = Session()
+        session.salt_chunks = [b"<script>parent.printNL('25','3||Salt 2700 PPM');</script>" + b' ' * 65536]
+        self.assertEqual(await self.read(session), (2700, 'connected'))
+
+    async def test_fragmented_salt_line_followed_by_large_padding(self):
+        session = Session()
+        session.salt_chunks = [b"<script>parent.printNL('25','3||Salt 27", b"00 PPM');</script>" + b' ' * 65536]
+        self.assertEqual(await self.read(session), (2700, 'connected'))
+
     async def test_consecutive_polls_create_and_close_separate_sessions(self):
         created = []
         def create_session(_, **kwargs):

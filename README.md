@@ -29,6 +29,8 @@ cookie stays local to each initialized display attempt; it is never logged,
 persisted, forwarded to another host, or carried through a stream redirect.
 Each poll creates and closes its own HTTP session, so a later poll cannot reuse
 display-session cookies left behind by an earlier read or another integration.
+The parser searches incoming display text before trimming its retained buffer;
+large vendor padding flushes must not discard a salt line before it is parsed.
 
 All sensor entities are created even when a value is temporarily unavailable,
 so a chlorinator that is off during Home Assistant startup can recover on a

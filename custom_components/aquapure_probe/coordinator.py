@@ -326,10 +326,13 @@ async def _read_webtouch_salt_session(
                         return None
                     async for chunk in stream.content.iter_any():
                         stream_started.set()
-                        text = (text + chunk.decode("utf-8", "ignore"))[-16384:]
+                        text += chunk.decode("utf-8", "ignore")
                         match = _SALT_PATTERN.search(text)
                         if match:
                             return int(match.group(1))
+                        # WebTouch flushes display scripts with large padding.
+                        # Search the whole received chunk before trimming it.
+                        text = text[-16384:]
             except (asyncio.TimeoutError, ValueError):
                 return None
             return None
