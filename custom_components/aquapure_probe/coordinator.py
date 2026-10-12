@@ -181,7 +181,7 @@ async def _read_webtouch_salt(
 
     async def start_data(
         action_id: str,
-    ) -> tuple[Mapping[str, Any], str] | None:
+    ) -> tuple[Mapping[str, Any], str, dict[str, str]] | None:
         """Try both publicly shipped WebTouch authentication branches."""
         try:
             async with session.get(
@@ -197,7 +197,9 @@ async def _read_webtouch_salt(
                 if isinstance(payload, Mapping) and (
                     payload.get("serverConnection") or payload.get("mobileTouchUrl")
                 ):
-                    return payload, "v2"
+                    cookie = response.cookies.get("newIOSession")
+                    display_cookies = {"newIOSession": cookie.value} if cookie else {}
+                    return payload, "v2", display_cookies
         except (asyncio.TimeoutError, ValueError):
             pass
         except Exception:  # A display probe must never break normal SWC data.
@@ -220,7 +222,9 @@ async def _read_webtouch_salt(
                 if isinstance(payload, Mapping) and (
                     payload.get("serverConnection") or payload.get("mobileTouchUrl")
                 ):
-                    return payload, "v1"
+                    cookie = response.cookies.get("newIOSession")
+                    display_cookies = {"newIOSession": cookie.value} if cookie else {}
+                    return payload, "v1", display_cookies
         except (asyncio.TimeoutError, ValueError):
             return None
         except Exception:
@@ -253,7 +257,7 @@ async def _read_webtouch_salt(
         result = await start_data(action_id)
         if result is None:
             continue
-        init_data, protocol = result
+        init_data, protocol, display_cookies = result
 
         # Accounts can contain more than one pool. The initialized display's
         # label is authoritative, so do not open a different controller merely
@@ -277,12 +281,23 @@ async def _read_webtouch_salt(
             result = await start_data(redirected_action)
             if result is None:
                 continue
-            init_data, protocol = result
+            init_data, protocol, display_cookies = result
 
         stream_url = init_data.get("serverConnection")
         start_action = init_data.get("actionIdMasterStart")
         status_action = init_data.get("actionIdMasterId")
         if not isinstance(stream_url, str) or not start_action or not status_action:
+            continue
+        # The API's host-only cookie is not automatically sent to WebTouch.
+        # Forward only this session cookie, and only to the vendor display host.
+        stream_location = urlparse(stream_url)
+        if (
+            stream_location.scheme != "https"
+            or stream_location.hostname != "webtouch.iaqualink.net"
+            or stream_location.username is not None
+            or stream_location.password is not None
+            or stream_location.port not in (None, 443)
+        ):
             continue
 
         stream_started = asyncio.Event()
@@ -290,10 +305,14 @@ async def _read_webtouch_salt(
         async def consume_stream() -> int | None:
             text = ""
             try:
-                # The official page authenticates this long-lived request with
-                # the cookie set by ``init``; it does not attach the OAuth
-                # header used by the command endpoint.
-                async with session.get(stream_url, timeout=20) as stream:
+                # A normal cookie jar scopes init's cookie to prm.iaqualink.net.
+                # Keep it local to this display attempt; never send OAuth here.
+                async with session.get(
+                    stream_url,
+                    cookies=display_cookies,
+                    allow_redirects=False,
+                    timeout=20,
+                ) as stream:
                     if stream.status != 200:
                         return None
                     async for chunk in stream.content.iter_any():
@@ -321,6 +340,7 @@ async def _read_webtouch_salt(
                             "dt": str(round(time.time() * 1000)),
                             "sessionID": str(getattr(client, "client_id", "")),
                         },
+                        cookies=display_cookies,
                         timeout=10,
                     )
                 else:
@@ -332,6 +352,7 @@ async def _read_webtouch_salt(
                             "dt": str(round(time.time() * 1000)),
                         },
                         headers=headers,
+                        cookies=display_cookies,
                         timeout=10,
                     )
                 async with request as response:
