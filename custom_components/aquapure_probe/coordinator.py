@@ -41,6 +41,7 @@ _WEBTOUCH_V1_COMMAND_URL = "https://prm.iaqualink.net/webtouch/command"
 _PORTAL_USER_ID_URL = "https://prm.iaqualink.net/v2/userId"
 _PORTAL_LOCATIONS_URL = "https://prm.iaqualink.net/v2/users/{user_id}/locations"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
+_OFFLINE_PATTERN = re.compile(r"printNL\(\s*['\"]OFFLINE['\"]\s*,", re.IGNORECASE)
 _ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
 
 
@@ -59,14 +60,24 @@ async def _read_webtouch_salt(
     system: Any,
 ) -> tuple[int | None, str]:
     """Use an isolated, short-lived cookie jar for each WebTouch display read."""
-    async with async_create_clientsession(hass, auto_cleanup=False) as session:
-        return await _read_webtouch_salt_session(session, client, system)
+    result: tuple[int | None, str] = (None, "not available")
+    for restart in (False, True):
+        session = async_create_clientsession(hass, auto_cleanup=False)
+        try:
+            result = await _read_webtouch_salt_session(session, client, system, restart)
+        finally:
+            # HA owns the shared connector; release only this private session.
+            session.detach()
+        if result[0] is not None or result[1] == "controller offline":
+            break
+    return result
 
 
 async def _read_webtouch_salt_session(
     session: Any,
     client: Any,
     system: Any,
+    restart: bool = False,
 ) -> tuple[int | None, str]:
     """Read the legacy WebTouch display stream without issuing equipment commands.
 
@@ -195,7 +206,7 @@ async def _read_webtouch_salt_session(
         try:
             async with session.get(
                 _WEBTOUCH_INIT_URL,
-                params={"actionID": action_id},
+                params={"actionID": action_id, **({"restart": "true"} if restart else {})},
                 headers=headers,
                 timeout=10,
             ) as response:
@@ -222,7 +233,11 @@ async def _read_webtouch_salt_session(
         try:
             async with session.get(
                 _WEBTOUCH_V1_INIT_URL,
-                params={"actionID": action_id, "sessionID": str(session_id)},
+                params={
+                    "actionID": action_id,
+                    "sessionID": str(session_id),
+                    **({"restart": "true"} if restart else {}),
+                },
                 timeout=10,
             ) as response:
                 if response.status != 200:
@@ -310,8 +325,10 @@ async def _read_webtouch_salt_session(
             continue
 
         stream_started = asyncio.Event()
+        controller_offline = False
 
         async def consume_stream() -> int | None:
+            nonlocal controller_offline
             text = ""
             try:
                 # A normal cookie jar scopes init's cookie to prm.iaqualink.net.
@@ -320,13 +337,16 @@ async def _read_webtouch_salt_session(
                     stream_url,
                     cookies=display_cookies,
                     allow_redirects=False,
-                    timeout=20,
+                    timeout=30,
                 ) as stream:
                     if stream.status != 200:
                         return None
                     async for chunk in stream.content.iter_any():
                         stream_started.set()
                         text += chunk.decode("utf-8", "ignore")
+                        if _OFFLINE_PATTERN.search(text):
+                            controller_offline = True
+                            return None
                         match = _SALT_PATTERN.search(text)
                         if match:
                             return int(match.group(1))
@@ -389,7 +409,10 @@ async def _read_webtouch_salt_session(
                 await asyncio.gather(stream_task, return_exceptions=True)
                 return salt, "connected"
 
-            await asyncio.wait_for(stream_started.wait(), timeout=8)
+            await asyncio.wait_for(stream_started.wait(), timeout=15)
+            if controller_offline:
+                await stream_task
+                return None, "controller offline"
             await asyncio.sleep(1)
             status_opened, salt = await send_display_command(status_action, "6")
             if not status_opened:
@@ -402,6 +425,8 @@ async def _read_webtouch_salt_session(
                 return salt, "connected"
 
             salt = await stream_task
+            if controller_offline:
+                return None, "controller offline"
             if salt is not None:
                 return salt, "connected"
         except (asyncio.TimeoutError, ValueError):

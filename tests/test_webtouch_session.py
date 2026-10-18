@@ -15,7 +15,7 @@ SOURCE = Path(__file__).parents[1] / 'custom_components/aquapure_probe/coordinat
 TREE = ast.parse(SOURCE.read_text())
 NODES = [node for node in TREE.body if (
     isinstance(node, ast.Assign) and any(
-        isinstance(t, ast.Name) and t.id.startswith(('_WEBTOUCH_', '_PORTAL_', '_SALT_', '_ACTION_'))
+        isinstance(t, ast.Name) and t.id.startswith(('_WEBTOUCH_', '_PORTAL_', '_SALT_', '_OFFLINE_', '_ACTION_'))
         for t in node.targets
     )
 ) or isinstance(node, ast.AsyncFunctionDef) and node.name in ('_read_webtouch_salt', '_read_webtouch_salt_session')]
@@ -50,9 +50,9 @@ class Session:
         self.salt_chunks = [b"<script>parent.printNL('text','Salt 2700 PPM');</script>"]
         self.calls = []
         self.closed = False
+        self.fail_start = False
         self.status_opened = asyncio.Event()
-    async def __aenter__(self): return self
-    async def __aexit__(self, *args): self.closed = True
+    def detach(self): self.closed = True
     def get(self, url, **kwargs):
         self.calls.append(('GET', url, kwargs))
         if url.endswith('/userId'): return Response({'id': 'test-user'})
@@ -69,12 +69,12 @@ class Session:
             return Response(content=Display(self))
         if url.endswith('/command'):
             self.command(kwargs, kwargs['params']['command'])
-            return Response()
+            return Response(status=500 if self.fail_start else 200)
         raise AssertionError('Unexpected URL')
     def post(self, url, **kwargs):
         self.calls.append(('POST', url, kwargs))
         self.command(kwargs, kwargs['json']['command'])
-        return Response()
+        return Response(status=500 if self.fail_start else 200)
     def check_cookie(self, kwargs):
         assert kwargs.get('cookies') == {'newIOSession': 'display-session'}, 'Display session cookie missing'
     def command(self, kwargs, command):
@@ -112,6 +112,25 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         session = Session()
         session.salt_chunks = [b"<script>parent.printNL('25','3||Salt 27", b"00 PPM');</script>" + b' ' * 65536]
         self.assertEqual(await self.read(session), (2700, 'connected'))
+
+    async def test_failed_display_retries_with_fresh_session_and_restart(self):
+        sessions = []
+        def create_session(_, **kwargs):
+            session = Session()
+            session.fail_start = not sessions
+            sessions.append(session)
+            return session
+        self.assertEqual(await self.read(create_session), (2700, 'connected'))
+        self.assertEqual(len(sessions), 2)
+        self.assertTrue(all(session.closed for session in sessions))
+        inits = [kw for _, url, kw in sessions[1].calls if url.endswith('/init')]
+        self.assertTrue(all(kw['params']['restart'] == 'true' for kw in inits))
+
+    async def test_controller_offline_is_reported_and_not_retried(self):
+        session = Session()
+        session.salt_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
+        self.assertEqual(await self.read(session), (None, 'controller offline'))
+        self.assertTrue(session.closed)
 
     async def test_consecutive_polls_create_and_close_separate_sessions(self):
         created = []
