@@ -15,13 +15,10 @@ SOURCE = Path(__file__).parents[1] / 'custom_components/aquapure_probe/coordinat
 TREE = ast.parse(SOURCE.read_text())
 NODES = [node for node in TREE.body if (
     isinstance(node, ast.Assign) and any(
-        isinstance(t, ast.Name) and t.id.startswith(('_WEBTOUCH_', '_PORTAL_', '_SALT_', '_OFFLINE_', '_ACTION_'))
+        isinstance(t, ast.Name) and t.id.startswith(('_WEBTOUCH_', '_PORTAL_', '_SALT_', '_OFFLINE_', '_ACTION_', '_DISPLAY_', '_LOW_'))
         for t in node.targets
     )
 ) or isinstance(node, ast.AsyncFunctionDef) and node.name in ('_read_webtouch_salt', '_read_webtouch_salt_session')]
-
-async def no_delay(_):
-    pass
 
 class Response:
     def __init__(self, payload=None, status=200, cookie=None, content=None):
@@ -38,7 +35,8 @@ class Response:
 class Display:
     def __init__(self, session): self.session = session
     async def iter_any(self):
-        yield b"<script>parent.printNL('screen','Home');</script>"
+        for chunk in self.session.initial_chunks:
+            yield chunk
         await self.session.status_opened.wait()
         for chunk in self.session.salt_chunks:
             yield chunk
@@ -48,6 +46,7 @@ class Session:
     def __init__(self, protocol='v2', stream_url='https://webtouch.iaqualink.net/display'):
         self.protocol, self.stream_url = protocol, stream_url
         self.salt_chunks = [b"<script>parent.printNL('text','Salt 2700 PPM');</script>"]
+        self.initial_chunks = [b"<script>parent.printNL('23','1');parent.printNL('28','10||26||26||11||30');</script>"]
         self.calls = []
         self.closed = False
         self.fail_start = False
@@ -84,6 +83,9 @@ class Session:
 
 class WebTouchTests(unittest.IsolatedAsyncioTestCase):
     async def read(self, session):
+        self.delays = []
+        async def no_delay(seconds):
+            self.delays.append(seconds)
         names = {'Mapping': Mapping, 'Any': Any, 'HomeAssistant': Any, 're': re,
                  'parse_qs': parse_qs, 'urlparse': urlparse, 'quote': quote,
                  'time': __import__('time'),
@@ -123,13 +125,97 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.read(create_session), (2700, 'connected'))
         self.assertEqual(len(sessions), 2)
         self.assertTrue(all(session.closed for session in sessions))
+        self.assertIn(8, self.delays)
         inits = [kw for _, url, kw in sessions[1].calls if url.endswith('/init')]
         self.assertTrue(all(kw['params']['restart'] == 'true' for kw in inits))
 
-    async def test_controller_offline_is_reported_and_not_retried(self):
+    async def test_cold_offline_display_reconnects_without_resetting_relay(self):
+        sessions = []
+        def create_session(_, **kwargs):
+            session = Session()
+            if not sessions:
+                session.initial_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
+            sessions.append(session)
+            return session
+        self.assertEqual(await self.read(create_session), (2700, 'connected'))
+        self.assertEqual(len(sessions), 2)
+        self.assertTrue(all(session.closed for session in sessions))
+        self.assertIn(8, self.delays)
+        inits = [kw for _, url, kw in sessions[1].calls if url.endswith('/init')]
+        self.assertTrue(all('restart' not in kw['params'] for kw in inits))
+
+    async def test_persistent_offline_remains_stale_after_bounded_retry(self):
+        sessions = []
+        def create_session(_, **kwargs):
+            session = Session()
+            session.initial_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
+            sessions.append(session)
+            return session
+        self.assertEqual(await self.read(create_session), (None, 'controller offline'))
+        self.assertEqual(len(sessions), 2)
+        self.assertTrue(all(session.closed for session in sessions))
+
+    async def test_low_salt_warning_is_reported_without_inventing_ppm_or_restarting(self):
+        sessions = []
+        def create_session(_, **kwargs):
+            session = Session()
+            session.salt_chunks = [b"parent.printNL('25','2||Check AquaPure');",
+                                   b"parent.printNL('25','3||(Low Sa", b"lt)');" + b' ' * 65536]
+            sessions.append(session)
+            return session
+        self.assertEqual(await self.read(create_session), (None, 'connected; low salt warning; salt not rendered'))
+        self.assertEqual(len(sessions), 1)
+        self.assertTrue(sessions[0].closed)
+
+    async def test_numeric_salt_still_wins_when_warning_is_also_present(self):
         session = Session()
-        session.salt_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
-        self.assertEqual(await self.read(session), (None, 'controller offline'))
+        session.salt_chunks = [b"parent.printNL('25','3||(Low Salt)');",
+                               b"parent.printNL('25','4||Salt 2700 PPM');"]
+        self.assertEqual(await self.read(session), (2700, 'connected'))
+
+    async def test_padding_does_not_trigger_status_before_screen_is_ready(self):
+        session = Session()
+        class SlowDisplay(Display):
+            async def iter_any(self):
+                yield b'<html></html>' + b' ' * 65536
+                await asyncio.sleep(0.01)
+                self_outer.assertFalse(session.status_opened.is_set())
+                async for chunk in super().iter_any():
+                    yield chunk
+        self_outer = self
+        original_get = session.get
+        def get(url, **kwargs):
+            response = original_get(url, **kwargs)
+            if url == session.stream_url:
+                response.content = SlowDisplay(session)
+            return response
+        session.get = get
+        self.assertEqual(await self.read(session), (2700, 'connected'))
+
+    async def test_poll_cancellation_cleans_up_stream_and_session(self):
+        session = Session()
+        entered, exited = asyncio.Event(), asyncio.Event()
+        class BlockedDisplay:
+            async def iter_any(self):
+                try:
+                    entered.set()
+                    await asyncio.Event().wait()
+                    yield b''
+                finally:
+                    exited.set()
+        original_get = session.get
+        def get(url, **kwargs):
+            response = original_get(url, **kwargs)
+            if url == session.stream_url:
+                response.content = BlockedDisplay()
+            return response
+        session.get = get
+        task = asyncio.create_task(self.read(session))
+        await entered.wait()
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertTrue(exited.is_set())
         self.assertTrue(session.closed)
 
     async def test_consecutive_polls_create_and_close_separate_sessions(self):

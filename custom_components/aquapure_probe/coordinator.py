@@ -42,6 +42,9 @@ _PORTAL_USER_ID_URL = "https://prm.iaqualink.net/v2/userId"
 _PORTAL_LOCATIONS_URL = "https://prm.iaqualink.net/v2/users/{user_id}/locations"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
 _OFFLINE_PATTERN = re.compile(r"printNL\(\s*['\"]OFFLINE['\"]\s*,", re.IGNORECASE)
+_DISPLAY_READY_PATTERN = re.compile(r"printNL\(\s*['\"]28['\"]\s*,")
+_LOW_SALT_PATTERN = re.compile(r"\bLow\s+Salt\b", re.IGNORECASE)
+_LOW_SALT_STATUS = "connected; low salt warning; salt not rendered"
 _ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
 
 
@@ -61,14 +64,23 @@ async def _read_webtouch_salt(
 ) -> tuple[int | None, str]:
     """Use an isolated, short-lived cookie jar for each WebTouch display read."""
     result: tuple[int | None, str] = (None, "not available")
-    for restart in (False, True):
+    for attempt in range(2):
+        if attempt:
+            # The vendor client reconnects eight seconds after a closed stream.
+            # OFFLINE can describe a cold display relay, not the pool controller.
+            await asyncio.sleep(8)
         session = async_create_clientsession(hass, auto_cleanup=False)
         try:
-            result = await _read_webtouch_salt_session(session, client, system, restart)
+            result = await _read_webtouch_salt_session(
+                session,
+                client,
+                system,
+                restart=bool(attempt and result[1] != "controller offline"),
+            )
         finally:
             # HA owns the shared connector; release only this private session.
             session.detach()
-        if result[0] is not None or result[1] == "controller offline":
+        if result[0] is not None or result[1] == _LOW_SALT_STATUS:
             break
     return result
 
@@ -276,6 +288,7 @@ async def _read_webtouch_salt_session(
             return None
 
     connected_without_salt = False
+    low_salt_warning = False
     target_name = str(getattr(system, "name", "")).casefold()
     for action_id in dict.fromkeys(action_ids):
         result = await start_data(action_id)
@@ -324,11 +337,11 @@ async def _read_webtouch_salt_session(
         ):
             continue
 
-        stream_started = asyncio.Event()
+        screen_ready = asyncio.Event()
         controller_offline = False
 
         async def consume_stream() -> int | None:
-            nonlocal controller_offline
+            nonlocal controller_offline, low_salt_warning
             text = ""
             try:
                 # A normal cookie jar scopes init's cookie to prm.iaqualink.net.
@@ -342,14 +355,21 @@ async def _read_webtouch_salt_session(
                     if stream.status != 200:
                         return None
                     async for chunk in stream.content.iter_any():
-                        stream_started.set()
                         text += chunk.decode("utf-8", "ignore")
                         if _OFFLINE_PATTERN.search(text):
                             controller_offline = True
+                            screen_ready.set()
                             return None
                         match = _SALT_PATTERN.search(text)
                         if match:
+                            screen_ready.set()
                             return int(match.group(1))
+                        if _LOW_SALT_PATTERN.search(text):
+                            low_salt_warning = True
+                        # Padding/heartbeats are not a rendered Home screen.
+                        # Code 28 ends the screen with its date/time fields.
+                        if _DISPLAY_READY_PATTERN.search(text):
+                            screen_ready.set()
                         # WebTouch flushes display scripts with large padding.
                         # Search the whole received chunk before trimming it.
                         text = text[-16384:]
@@ -400,28 +420,20 @@ async def _read_webtouch_salt_session(
             await asyncio.sleep(2.5)
             started, salt = await send_display_command(start_action, "1")
             if not started:
-                stream_task.cancel()
-                await asyncio.gather(stream_task, return_exceptions=True)
                 continue
             connected_without_salt = True
             if salt is not None:
-                stream_task.cancel()
-                await asyncio.gather(stream_task, return_exceptions=True)
                 return salt, "connected"
 
-            await asyncio.wait_for(stream_started.wait(), timeout=15)
+            await asyncio.wait_for(screen_ready.wait(), timeout=15)
             if controller_offline:
                 await stream_task
                 return None, "controller offline"
             await asyncio.sleep(1)
             status_opened, salt = await send_display_command(status_action, "6")
             if not status_opened:
-                stream_task.cancel()
-                await asyncio.gather(stream_task, return_exceptions=True)
                 continue
             if salt is not None:
-                stream_task.cancel()
-                await asyncio.gather(stream_task, return_exceptions=True)
                 return salt, "connected"
 
             salt = await stream_task
@@ -430,15 +442,19 @@ async def _read_webtouch_salt_session(
             if salt is not None:
                 return salt, "connected"
         except (asyncio.TimeoutError, ValueError):
-            stream_task.cancel()
-            await asyncio.gather(stream_task, return_exceptions=True)
+            pass
         except Exception:
+            pass
+        finally:
+            # Cancellation during reload/shutdown must also release the stream.
             stream_task.cancel()
             await asyncio.gather(stream_task, return_exceptions=True)
 
     return (
         None,
-        "connected; salt not rendered"
+        _LOW_SALT_STATUS
+        if low_salt_warning
+        else "connected; salt not rendered"
         if connected_without_salt
         else "not available",
     )
@@ -485,7 +501,9 @@ async def async_read_probe(
                 "boost_minutes_remaining": swc.get("remainingBoostMins"),
                 "salt_ppm": home_salt if home_salt is not None else webtouch_salt,
                 "swc_status": (home.get("swc_info") or {}).get("swcPoolStatus"),
-                "low_salt": home.get("swc_low"),
+                "low_salt": (
+                    True if webtouch_status == _LOW_SALT_STATUS else home.get("swc_low")
+                ),
                 "probe_response": swc.get("response"),
                 "webtouch_status": webtouch_status,
             }
@@ -533,7 +551,9 @@ class AquaPureProbeCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "probe_available": False,
                 "webtouch_status": "update failed; showing last known salt",
             }
-        data, cached = retain_salt(data, self._salt_cache, dt_util.utcnow().isoformat())
+        now = dt_util.utcnow().isoformat()
+        data["salt_last_attempt"] = now
+        data, cached = retain_salt(data, self._salt_cache, now)
         if cached != self._salt_cache:
             self._salt_cache = cached
             await self._salt_store.async_save(cached)

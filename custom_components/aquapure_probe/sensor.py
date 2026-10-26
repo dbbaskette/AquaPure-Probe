@@ -130,5 +130,6 @@ class AquaPureProbeSensor(CoordinatorEntity[AquaPureProbeCoordinator], SensorEnt
         return {
             "stale": data.get("salt_stale", True) or not self.coordinator.last_update_success,
             "last_successful_reading": data.get("salt_last_success"),
+            "last_attempt": data.get("salt_last_attempt"),
             "update_status": data.get("webtouch_status"),
         }
