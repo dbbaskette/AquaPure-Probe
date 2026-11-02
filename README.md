@@ -31,9 +31,16 @@ Each poll creates and closes its own HTTP session, so a later poll cannot reuse
 display-session cookies left behind by an earlier read or another integration.
 The parser searches incoming display text before trimming its retained buffer;
 large vendor padding flushes must not discard a salt line before it is parsed.
-If a display session stalls, the probe retries once using WebTouch's display-only
-restart option. An explicit `OFFLINE` display frame is reported as
-`controller offline`; it does not confirm a fresh salt reading. Private HTTP
+If a display session stalls, the probe waits the vendor's eight-second reconnect
+delay and opens a fresh session, with at most three connection attempts. It
+does not invoke the vendor's separate manual display-reset action. An initial
+`OFFLINE` frame does not close the stream: like the vendor app, the probe keeps
+listening while the display-start command wakes the relay. Frames are consumed
+in order, so an old offline marker cannot mask the subsequent screen. A stream
+that stays offline or ends gets a bounded delayed reconnect without resetting
+the relay. Readiness and stream waits are bounded. The reader waits for a rendered
+screen rather than treating padding as a ready display.
+Private HTTP
 sessions are detached after polling so Home Assistant retains its shared connector.
 
 All sensor entities are created even when a value is temporarily unavailable,
@@ -92,6 +99,23 @@ and the original confirmation time when a poll cannot update it. Failed polls
 never advance that timestamp. No value is fabricated when no history exists.
 The cache is scoped to the configuration entry and controller serial; it cannot
 be carried over to a different pool. Other readings are not cached by this change.
+
+The `last_attempt` salt attribute records every completed automatic poll, separately
+from `last_successful_reading`. Polling runs every 30 minutes while the integration
+is loaded. The dashboard shows both times so ongoing polling is distinguishable
+from a fresh numeric observation. A live `Check AquaPure (Low Salt)` display can
+omit the salt PPM line entirely. In that case the probe exposes the warning in
+`update_status` and the low-salt flag, and retains the original numeric reading
+and confirmation time. It does not restart a healthy display or change chlorine
+output to try to obtain a number. The next scheduled poll can recover normally
+when the controller supplies numeric salt again.
+
+The salt tile also shows the last completed check time and its result (for
+example, "Display connection offline" or "Connected · no numeric salt reading").
+"Last known · awaiting fresh reading" describes retained salt; an attempted
+poll does not turn that old number into a new measurement. Copy the updated
+`www/pool-readings-card.js` to HA's `config/www` and refresh its dashboard
+resource URL when deploying this frontend change.
 
 WebTouch can connect without rendering salt; this has been observed while the
 chlorinator reports standby. This display fallback does not fix that upstream

@@ -6,6 +6,43 @@ globalThis.customElements={get:()=>true};
 globalThis.window={};
 const source=await readFile(new URL('../www/pool-readings-card.js',import.meta.url),'utf8');
 const {numeric,escapeHtml,historyPath,PoolReadingsCard}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+function renderSalt(attributes) {
+  const grid={innerHTML:''};
+  const card=Object.create(PoolReadingsCard.prototype);
+  card.shadowRoot={querySelector:()=>grid};
+  card._config={readings:[{entity:'sensor.salt',name:'Salt',min:0,max:6000,target:'Salt target'}]};
+  card._history={};
+  card._hass={locale:{language:'en-US'},states:{'sensor.salt':{state:'2800',attributes}}};
+  card._render();
+  return grid.innerHTML;
+}
+test('retained salt shows ongoing checks separately from its old confirmation',()=>{
+  const html=renderSalt({stale:true,last_attempt:'2026-11-02T13:42:31+00:00',
+    last_successful_reading:'2026-10-18T14:23:15+00:00',update_status:'controller offline'});
+  assert.match(html,/Checked Nov 2/);
+  assert.match(html,/Display connection offline/);
+  assert.match(html,/Last known · awaiting fresh reading/);
+  assert.match(html,/Last confirmed/);
+  assert.match(html,/class="stale"/);
+  assert.doesNotMatch(html,/cannot update/);
+});
+test('connected display without numeric salt is distinguished from an offline display',()=>{
+  const html=renderSalt({stale:true,last_attempt:'2026-11-02T13:42:31+00:00',
+    update_status:'connected; salt not rendered'});
+  assert.match(html,/Connected · no numeric salt reading/);
+  assert.doesNotMatch(html,/Display connection offline/);
+});
+test('bad or missing check timestamps do not fabricate a check',()=>{
+  for(const last_attempt of [undefined,null,'bad']) {
+    const html=renderSalt({stale:true,last_attempt});
+    assert.doesNotMatch(html,/Checked |Invalid Date/);
+  }
+});
+test('poll results are escaped when rendered',()=>{
+  const html=renderSalt({last_attempt:'2026-11-02T13:42:31+00:00',update_status:'<img onerror="bad">'});
+  assert.doesNotMatch(html,/<img/);
+  assert.match(html,/&lt;img onerror=&quot;bad&quot;&gt;/);
+});
 test('missing, blank and nonfinite values never become zero',()=>{
   for(const v of [undefined,null,'',' ','unknown','unavailable','NaN','Infinity',Infinity,true])assert.equal(numeric(v),null);
   assert.equal(numeric('0'),0);assert.equal(numeric('3200'),3200);assert.equal(numeric('7.8'),7.8);
