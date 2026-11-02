@@ -37,6 +37,8 @@ class Display:
     async def iter_any(self):
         for chunk in self.session.initial_chunks:
             yield chunk
+        if self.session.end_after_initial:
+            return
         await self.session.status_opened.wait()
         for chunk in self.session.salt_chunks:
             yield chunk
@@ -50,6 +52,8 @@ class Session:
         self.calls = []
         self.closed = False
         self.fail_start = False
+        self.end_after_initial = False
+        self.display_started = asyncio.Event()
         self.status_opened = asyncio.Event()
     def detach(self): self.closed = True
     def get(self, url, **kwargs):
@@ -79,6 +83,7 @@ class Session:
     def command(self, kwargs, command):
         self.check_cookie(kwargs)
         assert command in ('1', '6'), 'Equipment command must never be sent'
+        if command == '1': self.display_started.set()
         if command == '6': self.status_opened.set()
 
 class WebTouchTests(unittest.IsolatedAsyncioTestCase):
@@ -115,7 +120,7 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         session.salt_chunks = [b"<script>parent.printNL('25','3||Salt 27", b"00 PPM');</script>" + b' ' * 65536]
         self.assertEqual(await self.read(session), (2700, 'connected'))
 
-    async def test_failed_display_retries_with_fresh_session_and_restart(self):
+    async def test_failed_display_retries_with_fresh_session_without_reset(self):
         sessions = []
         def create_session(_, **kwargs):
             session = Session()
@@ -127,7 +132,7 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(session.closed for session in sessions))
         self.assertIn(8, self.delays)
         inits = [kw for _, url, kw in sessions[1].calls if url.endswith('/init')]
-        self.assertTrue(all(kw['params']['restart'] == 'true' for kw in inits))
+        self.assertTrue(all('restart' not in kw['params'] for kw in inits))
 
     async def test_cold_offline_display_reconnects_without_resetting_relay(self):
         sessions = []
@@ -135,6 +140,7 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
             session = Session()
             if not sessions:
                 session.initial_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
+                session.end_after_initial = True
             sessions.append(session)
             return session
         self.assertEqual(await self.read(create_session), (2700, 'connected'))
@@ -149,11 +155,58 @@ class WebTouchTests(unittest.IsolatedAsyncioTestCase):
         def create_session(_, **kwargs):
             session = Session()
             session.initial_chunks = [b"<script>parent.printNL('OFFLINE','');</script>"]
+            session.end_after_initial = True
             sessions.append(session)
             return session
         self.assertEqual(await self.read(create_session), (None, 'controller offline'))
-        self.assertEqual(len(sessions), 2)
+        self.assertEqual(len(sessions), 3)
         self.assertTrue(all(session.closed for session in sessions))
+
+    async def test_third_fresh_connection_can_recover_a_cold_relay(self):
+        sessions = []
+        def create_session(_, **kwargs):
+            session = Session()
+            if len(sessions) < 2:
+                session.initial_chunks = [b"parent.printNL('OFFLINE','');"]
+                session.end_after_initial = True
+            sessions.append(session)
+            return session
+        self.assertEqual(await self.read(create_session), (2700, 'connected'))
+        self.assertEqual(len(sessions), 3)
+        self.assertTrue(all(session.closed for session in sessions))
+        self.assertEqual(self.delays.count(8), 2)
+        for session in sessions:
+            self.assertTrue(all('restart' not in kw['params'] for _, url, kw in session.calls if url.endswith('/init')))
+
+    async def test_offline_frame_before_start_does_not_close_a_recovering_stream(self):
+        session = Session()
+        class WakingDisplay(Display):
+            async def iter_any(self):
+                yield b"<script>parent.printNL('OFFLINE','');</script>"
+                await session.display_started.wait()
+                async for chunk in super().iter_any():
+                    yield chunk
+        original_get = session.get
+        def get(url, **kwargs):
+            response = original_get(url, **kwargs)
+            if url == session.stream_url:
+                response.content = WakingDisplay(session)
+            return response
+        session.get = get
+        self.assertEqual(await self.read(session), (2700, 'connected'))
+        inits = [kw for _, url, kw in session.calls if url.endswith('/init')]
+        self.assertEqual(len(inits), 1)
+        self.assertFalse(any('restart' in kw['params'] for kw in inits))
+
+    async def test_offline_and_fresh_salt_in_same_flush_uses_the_later_reading(self):
+        session = Session()
+        session.salt_chunks = [b"parent.printNL('OFFLINE','');parent.printNL('25','3||Salt 2600 PPM');"]
+        self.assertEqual(await self.read(session), (2600, 'connected'))
+
+    async def test_offline_after_salt_in_same_flush_does_not_confirm_old_salt(self):
+        session = Session()
+        session.salt_chunks = [b"parent.printNL('25','3||Salt 2600 PPM');parent.printNL('OFFLINE','');"]
+        self.assertEqual(await self.read(session), (None, 'controller offline'))
 
     async def test_low_salt_warning_is_reported_without_inventing_ppm_or_restarting(self):
         sessions = []

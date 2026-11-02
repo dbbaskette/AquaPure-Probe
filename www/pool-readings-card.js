@@ -7,6 +7,23 @@ export function numeric(value) {
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+export function pollingStatus(entity, locale = 'en') {
+  const attempted = Date.parse(entity?.attributes?.last_attempt);
+  if (!Number.isFinite(attempted)) return '';
+  const checked = new Intl.DateTimeFormat(locale, {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+  }).format(attempted);
+  const status = entity.attributes.update_status;
+  const labels = {
+    'controller offline': 'Display connection offline',
+    'connected; salt not rendered': 'Connected · no numeric salt reading',
+    'connected; low salt warning; salt not rendered': 'Low salt warning · no numeric salt reading',
+    'update failed; showing last known salt': 'Poll failed · retaining last reading',
+    'connected': 'Reading received',
+    'not available': 'Display unavailable',
+  };
+  return `Checked ${checked}${status ? ' · ' + (labels[status] || status) : ''}`;
+}
 export function historyPath(rows, start, end) {
   const points = rows.map(r => ({ t: Date.parse(r.last_changed || r.last_updated), v: numeric(r.state) }))
     .filter(p => Number.isFinite(p.t) && p.t <= end).sort((a,b) => a.t-b.t);
@@ -42,6 +59,7 @@ button{display:block;text-align:left;width:100%;min-width:0;background:var(--ha-
 button:focus-visible{outline:3px solid var(--primary-color);outline-offset:2px}.name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.value{font-size:30px;line-height:1.2;font-weight:500;letter-spacing:-.8px;margin-top:4px;font-variant-numeric:tabular-nums}.unit{font-size:12px;color:var(--secondary-text-color);margin-left:4px;letter-spacing:0;font-weight:400}
 .bar{height:6px;position:relative;display:flex;border-radius:4px;margin:12px 2px 7px;background:var(--divider-color)}.band{height:6px}.band:first-child{border-radius:4px 0 0 4px}.band:last-child{border-radius:0 4px 4px 0}.marker{position:absolute;width:3px;height:14px;border-radius:2px;background:var(--primary-text-color);top:-4px;transform:translateX(-50%);box-shadow:0 0 0 1px var(--card-background-color)}
 .hint{font-size:11px;color:var(--secondary-text-color);min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stale .hint{color:var(--warning-color,#a47715)}.trend{border-top:1px solid var(--divider-color);margin-top:7px;padding-top:4px;height:44px}.trend svg{display:block;width:100%;height:38px}.empty{font-size:11px;color:var(--secondary-text-color);display:flex;align-items:center;height:38px}.times{display:flex;justify-content:space-between;color:var(--secondary-text-color);font-size:10px}.foot{font-size:11px;color:var(--secondary-text-color);padding:8px 3px 0}
+.check{margin-top:5px;font-size:11px;line-height:1.4;color:var(--secondary-text-color);overflow-wrap:anywhere}
 @media(max-width:600px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}button{padding:11px 12px 8px}.value{font-size:29px}}
 `;
 
@@ -101,13 +119,14 @@ export class PoolReadingsCard extends HTMLElement {
       const time=entity?.attributes.last_successful_reading;
       let hint=c.target||'Current reading';
       if(value===null)hint='Reading unavailable';
-      else if(stale)hint='Last known · cannot update';
+      else if(stale)hint='Last known · awaiting fresh reading';
       else if(c.good_min!==undefined)hint=value<c.good_min?'Below range':value>c.good_max?'Above range':'In range';
       const history=historyPath(this._history[c.entity]||[],this._start,this._end);
       const lineColor=stale?'var(--secondary-text-color)':c.neutral?'#2596be':'#2da995';
       const caption=this._historyError?'History unavailable':history?`${history.low}–${history.high} ${unit}`:'No recorded history yet';
       const graph=history?`<svg viewBox="0 0 200 38" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(c.name+' recorded 24-hour history; '+caption+(stale?'; includes retained readings':''))}"><path d="${history.path}" fill="none" stroke="${lineColor}" stroke-width="1.7" vector-effect="non-scaling-stroke" ${stale?'stroke-dasharray="4 3"':''}/></svg>`:`<span class="empty">${caption}</span>`;
-      return `<button type="button" class="${stale?'stale':''}" data-entity="${escapeHtml(c.entity)}" aria-label="${escapeHtml(c.name+': '+display+' '+unit+'. '+hint)}" title="${escapeHtml(c.target+(stale&&time?' · Last confirmed '+new Date(time).toLocaleString():''))}"><div class="name">${escapeHtml(c.name)}</div><div class="value">${display}<span class="unit">${value===null?'':escapeHtml(unit)}</span></div><div class="bar">${value===null?'':bands+`<span class="marker" style="left:${fraction*100}%"></span>`}</div><div class="hint">${escapeHtml(hint)}</div><div class="trend">${graph}</div><div class="times"><span>−24h${stale?' · retained':''}</span><span>${this._historyError?'update failed':'now'}</span></div></button>`;
+      const check=pollingStatus(entity,this._hass.locale?.language||'en');
+      return `<button type="button" class="${stale?'stale':''}" data-entity="${escapeHtml(c.entity)}" aria-label="${escapeHtml(c.name+': '+display+' '+unit+'. '+hint+(check?'. '+check:''))}" title="${escapeHtml(c.target+(stale&&time?' · Last confirmed '+new Date(time).toLocaleString():''))}"><div class="name">${escapeHtml(c.name)}</div><div class="value">${display}<span class="unit">${value===null?'':escapeHtml(unit)}</span></div><div class="bar">${value===null?'':bands+`<span class="marker" style="left:${fraction*100}%"></span>`}</div><div class="hint">${escapeHtml(hint)}</div>${check?`<div class="check">${escapeHtml(check)}</div>`:''}<div class="trend">${graph}</div><div class="times"><span>−24h${stale?' · retained':''}</span><span>${this._historyError?'update failed':'now'}</span></div></button>`;
     }).join('');
     if(html!==this._lastHTML){this.shadowRoot.querySelector('.grid').innerHTML=html;this._lastHTML=html;}
   }

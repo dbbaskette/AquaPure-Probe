@@ -41,8 +41,10 @@ _WEBTOUCH_V1_COMMAND_URL = "https://prm.iaqualink.net/webtouch/command"
 _PORTAL_USER_ID_URL = "https://prm.iaqualink.net/v2/userId"
 _PORTAL_LOCATIONS_URL = "https://prm.iaqualink.net/v2/users/{user_id}/locations"
 _SALT_PATTERN = re.compile(r"\bSalt\s+(\d{3,5})\s*PPM\b", re.IGNORECASE)
-_OFFLINE_PATTERN = re.compile(r"printNL\(\s*['\"]OFFLINE['\"]\s*,", re.IGNORECASE)
-_DISPLAY_READY_PATTERN = re.compile(r"printNL\(\s*['\"]28['\"]\s*,")
+_DISPLAY_FRAME_PATTERN = re.compile(
+    r"printNL\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"](.*?)['\"]\s*\)",
+    re.DOTALL,
+)
 _LOW_SALT_PATTERN = re.compile(r"\bLow\s+Salt\b", re.IGNORECASE)
 _LOW_SALT_STATUS = "connected; low salt warning; salt not rendered"
 _ACTION_ID_PATTERN = re.compile(r"[?&]actionID=([^&#'\"\s]+)")
@@ -64,19 +66,16 @@ async def _read_webtouch_salt(
 ) -> tuple[int | None, str]:
     """Use an isolated, short-lived cookie jar for each WebTouch display read."""
     result: tuple[int | None, str] = (None, "not available")
-    for attempt in range(2):
+    for attempt in range(3):
         if attempt:
             # The vendor client reconnects eight seconds after a closed stream.
             # OFFLINE can describe a cold display relay, not the pool controller.
             await asyncio.sleep(8)
         session = async_create_clientsession(hass, auto_cleanup=False)
         try:
-            result = await _read_webtouch_salt_session(
-                session,
-                client,
-                system,
-                restart=bool(attempt and result[1] != "controller offline"),
-            )
+            # Match the vendor's automatic reconnect, not its separate manual
+            # reset action. Resetting a quiet relay can interrupt its warm-up.
+            result = await _read_webtouch_salt_session(session, client, system)
         finally:
             # HA owns the shared connector; release only this private session.
             session.detach()
@@ -350,31 +349,47 @@ async def _read_webtouch_salt_session(
                     stream_url,
                     cookies=display_cookies,
                     allow_redirects=False,
-                    timeout=30,
+                    timeout=45,
                 ) as stream:
                     if stream.status != 200:
                         return None
                     async for chunk in stream.content.iter_any():
                         text += chunk.decode("utf-8", "ignore")
-                        if _OFFLINE_PATTERN.search(text):
-                            controller_offline = True
+                        consumed = 0
+                        salt = None
+                        # The vendor's printNL handler ignores OFFLINE while
+                        # the display-start command wakes the relay. Keep the
+                        # stream open so the rendered screen can follow it.
+                        # Consume frames in order; old OFFLINE text must not
+                        # override later frames or survive into the next chunk.
+                        for frame in _DISPLAY_FRAME_PATTERN.finditer(text):
+                            consumed = frame.end()
+                            code, value = frame.groups()
+                            if code == "OFFLINE":
+                                controller_offline = True
+                                screen_ready.clear()
+                                salt = None
+                                continue
+                            if code in ("23", "24", "25", "28", "2D"):
+                                controller_offline = False
+                            match = _SALT_PATTERN.search(value)
+                            if match:
+                                salt = int(match.group(1))
+                            if _LOW_SALT_PATTERN.search(value):
+                                low_salt_warning = True
+                            # Padding/heartbeats are not a rendered Home screen.
+                            if code == "28":
+                                screen_ready.set()
+                        if salt is not None and not controller_offline:
                             screen_ready.set()
-                            return None
-                        match = _SALT_PATTERN.search(text)
-                        if match:
-                            screen_ready.set()
-                            return int(match.group(1))
-                        if _LOW_SALT_PATTERN.search(text):
-                            low_salt_warning = True
-                        # Padding/heartbeats are not a rendered Home screen.
-                        # Code 28 ends the screen with its date/time fields.
-                        if _DISPLAY_READY_PATTERN.search(text):
-                            screen_ready.set()
-                        # WebTouch flushes display scripts with large padding.
-                        # Search the whole received chunk before trimming it.
-                        text = text[-16384:]
+                            return salt
+                        # Parse before trimming large vendor padding flushes.
+                        text = text[consumed:][-16384:]
             except (asyncio.TimeoutError, ValueError):
-                return None
+                pass
+            finally:
+                # An ended/offline stream releases the bounded handshake wait.
+                screen_ready.set()
             return None
 
         stream_task = asyncio.create_task(consume_stream())
@@ -421,14 +436,17 @@ async def _read_webtouch_salt_session(
             started, salt = await send_display_command(start_action, "1")
             if not started:
                 continue
-            connected_without_salt = True
             if salt is not None:
                 return salt, "connected"
 
-            await asyncio.wait_for(screen_ready.wait(), timeout=15)
+            await asyncio.wait_for(screen_ready.wait(), timeout=30)
             if controller_offline:
                 await stream_task
                 return None, "controller offline"
+            # A stream ending before a screen arrives is a failed connection.
+            if stream_task.done() and stream_task.result() is None:
+                continue
+            connected_without_salt = True
             await asyncio.sleep(1)
             status_opened, salt = await send_display_command(status_action, "6")
             if not status_opened:
@@ -449,6 +467,8 @@ async def _read_webtouch_salt_session(
             # Cancellation during reload/shutdown must also release the stream.
             stream_task.cancel()
             await asyncio.gather(stream_task, return_exceptions=True)
+        if controller_offline:
+            return None, "controller offline"
 
     return (
         None,
